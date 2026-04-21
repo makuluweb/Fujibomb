@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Camera Settings · Fujifilm Field Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080809;
+    --surface: #111114;
+    --surface2: #141417;
+    --border: rgba(255,255,255,0.1);
+    --border-strong: rgba(255,255,255,0.17);
+    --text: #f5f2ec;
+    --muted: rgba(245,242,236,0.55);
+    --mono: 'Space Mono', monospace;
+    --serif: 'Cormorant Garamond', serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* grain */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.55;
+  }
+
+  /* ── header ── */
+  .header {
+    padding: 30px 20px 0;
+    border-bottom: 1px solid var(--border);
+    animation: fadeDown 0.5s ease both;
+  }
+
+  .eyebrow {
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    color: var(--muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+
+  .header-title {
+    font-family: var(--serif);
+    font-size: clamp(28px, 7vw, 40px);
+    font-weight: 700;
+    line-height: 1.0;
+    letter-spacing: -0.01em;
+    padding-bottom: 18px;
+  }
+
+  .header-title .subtitle { font-size: 0.72em; }
+
+  /* ── screen tabs ── */
+  .screen-tabs {
+    display: flex;
+    border-top: 1px solid var(--border);
+  }
+
+  .screen-tab {
+    flex: 1;
+    padding: 13px 6px;
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .screen-tab .tab-icon { font-size: 17px; }
+  .screen-tab.active {
+    border-bottom-color: var(--tab-accent);
+    color: var(--tab-accent);
+    background: color-mix(in srgb, var(--tab-accent) 8%, transparent);
+  }
+
+  /* ── screens ── */
+  .screen { display: none; }
+  .screen.active { display: block; animation: slideUp 0.32s cubic-bezier(0.22,1,0.36,1) both; }
+
+  /* ── scenario grid ── */
+  .scenario-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 16px;
+  }
+
+  .scenario-card {
+    background: var(--surface2);
+    border: 1px solid var(--border-strong);
+    border-radius: 14px;
+    padding: 14px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.18s ease, border-color 0.2s, background 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .scenario-card:hover { transform: translateY(-3px); }
+  .scenario-card .s-emoji { font-size: 22px; line-height: 1; }
+  .scenario-card .s-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    line-height: 1.35;
+    text-transform: uppercase;
+  }
+
+  /* ── detail panel ── */
+  .detail-panel {
+    margin: 0 16px 32px;
+    border-radius: 20px;
+    overflow: hidden;
+    animation: slideUp 0.3s cubic-bezier(0.22,1,0.36,1) both;
+  }
+
+  .detail-header {
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .detail-header-left { display: flex; align-items: center; gap: 12px; }
+  .detail-emoji { font-size: 26px; }
+
+  .detail-eyebrow {
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    margin-bottom: 3px;
+    text-transform: uppercase;
+    font-weight: 700;
+    display: block;
+  }
+
+  .detail-title {
+    font-family: var(--serif);
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  .close-btn {
+    background: rgba(255,255,255,0.09);
+    border: none;
+    border-radius: 50%;
+    width: 30px; height: 30px;
+    color: var(--muted);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .close-btn:hover { background: rgba(255,255,255,0.16); }
+
+  /* ── inner tabs ── */
+  .inner-tabs {
+    display: flex;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .inner-tab {
+    flex: 1;
+    padding: 11px 4px;
+    background: transparent;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: rgba(245,242,236,0.35);
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+
+  .inner-content { padding: 16px; }
+
+  /* ── badges ── */
+  .badges { display: flex; gap: 8px; margin-bottom: 12px; }
+
+  .badge {
+    flex: 1;
+    background: #0a0a0c;
+    border-radius: 12px;
+    padding: 12px 8px;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,0.13);
+  }
+
+  .badge-label {
+    font-size: 8px;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    display: block;
+  }
+
+  .badge-value {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+    display: block;
+  }
+
+  /* ── info blocks ── */
+  .info-block {
+    border-radius: 12px;
+    padding: 14px 15px;
+    margin-bottom: 10px;
+  }
+
+  .info-block-label {
+    font-size: 8px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    font-weight: 700;
+    display: block;
+  }
+
+  .info-block p {
+    font-size: 12px;
+    line-height: 1.72;
+    color: rgba(245,242,236,0.88);
+  }
+
+  /* ── lens list ── */
+  .lens-list {
+    background: #0a0a0c;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .lens-row {
+    padding: 14px 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .lens-row:last-child { border-bottom: none; }
+
+  .lens-name {
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    line-height: 1.35;
+    display: block;
+  }
+
+  .lens-why {
+    font-size: 11px;
+    color: rgba(245,242,236,0.58);
+    line-height: 1.5;
+    display: block;
+  }
+
+  /* ── SUNNY 16 ── */
+  .s16-explainer {
+    margin: 16px 16px 0;
+    background: rgba(232,180,74,0.11);
+    border: 1px solid rgba(232,180,74,0.32);
+    border-radius: 16px;
+    padding: 16px;
+  }
+
+  .s16-eyebrow {
+    font-size: 8px;
+    letter-spacing: 0.18em;
+    color: #e8b44a;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    font-weight: 700;
+    display: block;
+  }
+
+  .s16-explainer p {
+    font-size: 12px;
+    color: rgba(245,242,236,0.88);
+    line-height: 1.72;
+  }
+
+  .s16-explainer strong { color: #fff; }
+
+  .step-block { margin: 16px 16px 0; }
+
+  .step-label {
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    font-weight: 700;
+    display: block;
+    color: rgba(245,242,236,0.75);
+  }
+
+  .step-label.pending { color: #e8b44a; }
+
+  .iso-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .iso-btn {
+    padding: 10px 14px;
+    background: #111114;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 10px;
+    color: rgba(245,242,236,0.85);
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .iso-btn:hover { background: #1a1a1e; border-color: rgba(255,255,255,0.3); }
+
+  .iso-btn.active {
+    background: #e8b44a;
+    border-color: #e8b44a;
+    color: #080809;
+  }
+
+  .condition-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .condition-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: #111114;
+    border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+    width: 100%;
+    font-family: var(--mono);
+    color: var(--text);
+  }
+
+  .condition-btn:hover { background: #1a1a1e; border-color: rgba(255,255,255,0.28); }
+
+  .condition-emoji { font-size: 18px; flex-shrink: 0; }
+  .condition-info { flex: 1; }
+
+  .condition-name {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    display: block;
+  }
+
+  .condition-desc { font-size: 10px; color: rgba(245,242,236,0.55); display: block; }
+
+  .condition-settings { text-align: right; flex-shrink: 0; }
+  .condition-ap { font-size: 11px; font-weight: 700; color: rgba(245,242,236,0.68); display: block; }
+  .condition-sh { font-size: 10px; color: rgba(245,242,236,0.35); margin-top: 2px; display: block; }
+
+  .result-panel { border-radius: 20px; overflow: hidden; }
+
+  .result-header {
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .result-eyebrow {
+    font-size: 8px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+    font-weight: 700;
+    display: block;
+  }
+
+  .result-title { font-family: var(--serif); font-size: 20px; font-weight: 700; }
+
+  .result-body { padding: 16px; }
+
+  .capped-notice {
+    background: rgba(124,58,237,0.14);
+    border: 1px solid rgba(124,58,237,0.32);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+  }
+
+  .capped-title {
+    font-size: 8px;
+    letter-spacing: 0.12em;
+    color: #a78bfa;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 4px;
+    display: block;
+  }
+
+  .capped-body { font-size: 11px; color: rgba(190,175,255,0.85); line-height: 1.55; }
+
+  .warn-notice {
+    background: rgba(239,68,68,0.11);
+    border: 1px solid rgba(239,68,68,0.28);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    font-size: 11px;
+    color: #fca5a5;
+    line-height: 1.5;
+  }
+
+  .reset-btn {
+    width: 100%;
+    padding: 12px;
+    background: #111114;
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 12px;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 4px;
+  }
+  .reset-btn:hover { background: #1a1a1e; border-color: rgba(255,255,255,0.24); }
+
+  .hidden { display: none !important; }
+
+  @keyframes fadeDown {
+    from { opacity:0; transform: translateY(-10px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+  @keyframes slideUp {
+    from { opacity:0; transform: translateY(18px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <p class="eyebrow">Fujifilm · Field Guide</p>
+  <h1 class="header-title">
+    Camera Settings<br>
+    <span class="subtitle" id="titleSub" style="color:#60D0A0;">X-T5</span>
+  </h1>
+  <div class="screen-tabs">
+    <button class="screen-tab active" style="--tab-accent:#60D0A0;" onclick="switchScreen('xt5')" id="tab-xt5">
+      <span class="tab-icon">📷</span>X-T5
+    </button>
+    <button class="screen-tab" style="--tab-accent:#E8B84B;" onclick="switchScreen('xh2s')" id="tab-xh2s">
+      <span class="tab-icon">🎥</span>X-H2S
+    </button>
+    <button class="screen-tab" style="--tab-accent:#F59E0B;" onclick="switchScreen('s16')" id="tab-s16">
+      <span class="tab-icon">☀️</span>Sunny 16
+    </button>
+  </div>
+</div>
+
+<!-- SCREENS -->
+<div class="screen active" id="screen-xt5">
+  <div class="scenario-grid" id="grid-xt5"></div>
+  <div id="panel-xt5" class="hidden"></div>
+</div>
+
+<div class="screen" id="screen-xh2s">
+  <div class="scenario-grid" id="grid-xh2s"></div>
+  <div id="panel-xh2s" class="hidden"></div>
+</div>
+
+<div class="screen" id="screen-s16">
+  <div class="s16-explainer">
+    <span class="s16-eyebrow">📐 The Sunny 16 Rule</span>
+    <p>On a sunny day, set aperture to <strong>f/16</strong> and shutter to <strong>1/ISO</strong>. Open aperture for darker conditions — each stop doubles the shutter speed. Shutter is capped at <strong>1/1000</strong>; aperture adjusts automatically.</p>
+  </div>
+  <div class="step-block">
+    <span class="step-label pending" id="isoLabel">01 · Select your film ISO</span>
+    <div class="iso-grid" id="isoGrid"></div>
+  </div>
+  <div class="step-block hidden" id="condBlock">
+    <span class="step-label pending" id="condLabel">02 · Select lighting condition</span>
+    <div class="condition-list" id="condList"></div>
+  </div>
+  <div id="resultWrap" class="hidden" style="padding:0 16px 40px;"></div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// BASE SCENARIOS
+// ══════════════════════════════════════════════════════════════
+
+const BASE = [
+  { id:'sunny',       label:'Sunny Outdoors',    emoji:'☀️',  color:'#F59E0B', iso:'100',       ap:'f/8 – f/11',    sh:'1/250 – 1/1000', notes:'Ideal for landscapes and bright conditions.', tip:'Use a polarizer filter to cut glare and boost contrast.' },
+  { id:'cloudy',      label:'Cloudy Outdoors',   emoji:'⛅',  color:'#94A3B8', iso:'200 – 400', ap:'f/4 – f/8',     sh:'1/125 – 1/500',  notes:'Slight boost in ISO for softness.',            tip:'Overcast skies act as a giant softbox — great for portraits.' },
+  { id:'golden',      label:'Golden Hour',        emoji:'🌅',  color:'#EA580C', iso:'200 – 800', ap:'f/2.8 – f/5.6', sh:'1/200 – 1/500',  notes:'Warm tones, great for portraits.',             tip:'Shoot within 20 mins of sunrise or sunset for the best light.' },
+  { id:'indoors-day', label:'Indoors (Daylight)', emoji:'🏛️', color:'#0EA5E9', iso:'400 – 800', ap:'f/1.8 – f/4',   sh:'1/60 – 1/200',   notes:'Use natural window light.',                    tip:'Position subject at 45° to the window for flattering side light.' },
+  { id:'indoors-low', label:'Indoors (Lowlight)', emoji:'🕯️', color:'#D97706', iso:'800 – 3200',ap:'f/1.8 – f/2.8', sh:'1/60 – 1/100',   notes:'Use a tripod or steady hands.',                tip:'Enable image stabilisation and brace elbows against your body.' },
+  { id:'night',       label:'Night Outdoors',     emoji:'🌃',  color:'#6366F1', iso:'1600+',     ap:'f/1.8 – f/4',   sh:'1/30 – 1/100',   notes:'Use city lights; avoid motion blur.',          tip:'Keep shutter above 1/focal-length to avoid hand-shake blur.' },
+  { id:'portraits',   label:'Portraits',          emoji:'🧑‍🎨',color:'#EC4899', iso:'100 – 800', ap:'f/1.8 – f/4',   sh:'1/125 – 1/500',  notes:'Focus on eyes, blurred background.',           tip:'Use single-point AF on the nearest eye.' },
+  { id:'action',      label:'Action Shots',       emoji:'🏄',  color:'#10B981', iso:'100 – 400', ap:'f/2.8 – f/5.6', sh:'1/1000+',        notes:'Use burst mode to capture motion.',            tip:'Switch to continuous AF (AF-C) to track moving subjects.' },
+  { id:'macro',       label:'Macro Shots',        emoji:'🌿',  color:'#16A34A', iso:'100 – 400', ap:'f/8 – f/16',    sh:'1/200 – 1/500',  notes:'Manual focus preferred.',                     tip:'Depth of field is razor thin — use a focusing rail.' },
+];
+
+// ══════════════════════════════════════════════════════════════
+// CAMERA DATA
+// ══════════════════════════════════════════════════════════════
+
+const CAMS = {
+
+  xt5: {
+    label: 'X-T5', accent: '#60D0A0',
+    tips: {
+      sunny:        "The X-T5's 40MP sensor resolves extraordinary landscape detail — use a tripod and the 2-second timer to eliminate all vibration. Set Film Simulation to Velvia for punchy colour or Nostalgic Negative for a more filmic feel. The mechanical shutter top dial makes exposure adjustments fast and tactile.",
+      cloudy:       "Classic Chrome on the X-T5 renders overcast light beautifully — muted, filmic, and full of mood. Set DR200 to open up shadows without blowing highlights. The 40MP sensor extracts surprising texture even from flat light. Use Zone AF for candid street work.",
+      golden:       "The X-T5's 40MP resolves warm golden-hour gradients with stunning smoothness. Use Eterna Cinema for cinematic warmth. Enable Face/Eye AF and set AF-C with preset #2 (suitable for slow-moving subjects). The 3-axis tilting LCD is perfect for low-angle golden-hour shots.",
+      'indoors-day':"The X-T5 has 5-axis IBIS — use it. Set IS Mode to 'Shooting Only' to conserve battery. At 40MP, even slight camera shake is visible, so keep shutter above 1/focal-length. Use Auto WB 'White Priority' to neutralise mixed indoor light.",
+      'indoors-low':"At 40MP, high ISO noise is more visible than on lower-res sensors — stay below ISO 3200 where possible. The X-T5 focuses down to -7EV with its 5th-gen sensor. Try Acros grain simulation for beautiful B&W low-light shots. Enable IBIS and lean on fast prime lenses.",
+      night:        "The X-T5's 40MP gives you massive crops from night shots — compose loosely and crop in post. Classic Chrome or Acros+G are beautiful for night street. Use Zone AF or pre-focus at f/8 using the depth of field scale. The silent electronic shutter keeps you invisible.",
+      portraits:    "Enable FACE/EYE DETECTION — the X-T5's 5th-gen AF system is excellent. Use AF-C with preset #2 for moving subjects. The XF 33mm f/1.4 and XF 56mm f/1.2 WR were designed to resolve the 40MP sensor fully. Classic Negative or Astia/Soft for flattering skin tones.",
+      action:       "The X-T5 shoots up to 15fps (mechanical) or 20fps (electronic). Use AF-C with Custom Setting #4 or #5 for fast action. Enable Subject Detection for birds, animals, or vehicles. Note: the X-T5 is a stills-first camera — for serious action the X-H2S offers better blackout performance.",
+      macro:        "At 40MP, macro shots reveal extraordinary detail — keep the tripod rock-solid. Use Focus Peaking (Red, Strong) in MF mode. The X-T5's IBIS helps with handheld macro at slower shutter speeds. Assign Focus Check magnifier to an Fn button for precise focus verification.",
+    },
+    lenses: {
+      sunny:        [{n:'XF 16-55mm f/2.8 R LM WR',w:'Weather-sealed, sharp corner-to-corner — resolves 40MP cleanly'},{n:'XF 18mm f/1.4 R LM WR',w:'Next-gen wide prime designed specifically for 40MP sensors'},{n:'XF 8mm f/3.5 R WR',w:"Fujifilm's widest ever — stunning ultra-wide landscapes"}],
+      cloudy:       [{n:'XF 35mm f/1.4 R',w:'Classic rendering — beautiful in muted overcast light'},{n:'XF 33mm f/1.4 R LM WR',w:'Modern 50mm equiv built for 40MP — sharp, fast, weather-sealed'},{n:'XF 16-55mm f/2.8 R LM WR',w:'Versatile zoom that fully resolves the 40MP sensor'}],
+      golden:       [{n:'XF 56mm f/1.2 R WR',w:'Best contrast & colour — designed for 40MP, stunning bokeh'},{n:'XF 50mm f/1.0 R WR',w:'Maximum separation at golden hour, beautiful rendering'},{n:'XF 90mm f/2 R LM WR',w:'Flattering compression, razor sharp for portrait work'}],
+      'indoors-day':[{n:'XF 33mm f/1.4 R LM WR',w:'Modern 50mm equiv, fast AF, resolves every pixel at 40MP'},{n:'XF 23mm f/1.4 R LM WR',w:'Wide and fast — floods sensor with indoor window light'},{n:'XF 16-55mm f/2.8 R LM WR',w:'Constant f/2.8 zoom — proven on 40MP, weather-sealed'}],
+      'indoors-low':[{n:'XF 56mm f/1.2 R WR',w:'f/1.2 maximises light, new WR version designed for 40MP'},{n:'XF 50mm f/1.0 R WR',w:'f/1.0 ultimate low-light prime — extraordinary rendering'},{n:'XF 35mm f/1.4 R',w:'Legendary low-light character, holds up well at 40MP'}],
+      night:        [{n:'XF 23mm f/1.4 R LM WR',w:'Fast & wide — captures city scenes, resolves 40MP cleanly'},{n:'XF 33mm f/1.4 R LM WR',w:'Natural 50mm perspective for street, built for the 40MP sensor'},{n:'XF 35mm f/1.4 R',w:'Classic street rendering, beautiful wide open at night'}],
+      portraits:    [{n:'XF 56mm f/1.2 R WR',w:'The top portrait pick for 40MP — best contrast & colour'},{n:'XF 33mm f/1.4 R LM WR',w:'Modern 50mm portrait workhorse built to resolve 40MP'},{n:'XF 90mm f/2 R LM WR',w:'Super sharp, flattering compression — stunning on 40MP'}],
+      action:       [{n:'XF 50-140mm f/2.8 R LM OIS WR',w:'Proven fast zoom — sharp enough for 40MP at speed'},{n:'XF 70-300mm f/4-5.6 R LM OIS WR',w:'Modern telephoto with fast linear AF, good on 40MP'},{n:'XF 100-400mm f/4.5-5.6 R LM OIS WR',w:'Maximum reach for wildlife and sport — pairs well with X-T5'}],
+      macro:        [{n:'XF 80mm f/2.8 R LM OIS WR Macro',w:'1:1 macro — extraordinary detail at 40MP'},{n:'XF 30mm f/2.8 R LM WR Macro',w:'Next-gen 1:1 macro designed for 40MP sensors'},{n:'XF 60mm f/2.4 R Macro',w:'Classic 1:2 macro, lightweight and very sharp'}],
+    },
+  },
+
+  xh2s: {
+    label: 'X-H2S', accent: '#E8B84B',
+    tips: {
+      sunny:        "Set Film Simulation to Velvia for vivid saturated landscapes. Use the electronic shutter up to 1/32000s — no overexposure even wide open. Save your Velvia settings as a Custom Preset on the mode dial for one-tap recall.",
+      cloudy:       "Try Classic Chrome — its muted tones suit overcast light beautifully. Set WB to Cloudy (≈6000K) for subtle warmth. Boost Shadow Tone slightly in the Q Menu to open up dark areas.",
+      golden:       "Eterna Cinema adds cinematic warmth and gentle highlight rolloff. Enable Face/Eye AF so the X-H2S locks on while you chase the light. Raise Highlight Tone +1 to preserve warm sky detail.",
+      'indoors-day':"Enable IBIS — the X-H2S offers up to 7 stops of compensation. Set Auto WB to White Priority to keep mixed light neutral. The tilt/touchscreen is great for low-angle framing.",
+      'indoors-low':"Don't fear ISO 3200–6400 — the stacked sensor handles noise very well. Try Acros for dramatic B&W with natural film-like grain. Stack IBIS + OIS (IS Mode: IBIS/OIS) for maximum stability.",
+      night:        "Set Subject Detection to 'Person' so Face/Eye AF works in tricky city light. Silent electronic shutter is perfect for street. Try Acros+R for punchy B&W cityscapes.",
+      portraits:    "Turn on FACE/EYE DETECTION — class-leading AI eye-tracking. Use AF-C for active subjects. Classic Negative or Astia/Soft gives the most flattering skin tones. Assign Face Select to an Fn button.",
+      action:       "The X-H2S shoots up to 40fps with near-zero blackout. Enable AF-C + Subject Detection (Bird, Animal, Car) via Q Menu. Use Pre-Shot ES to capture moments before you press the shutter.",
+      macro:        "Enable Focus Peaking (White or Red) in MF Assist. Assign Focus Check magnifier to an Fn button for instant 100% zoom. Use the rear joystick to nudge focus without moving the camera.",
+    },
+    lenses: {
+      sunny:        [{n:'XF 10-24mm f/4 R OIS WR',w:'Ultra-wide for dramatic landscapes & big skies'},{n:'XF 16-55mm f/2.8 R LM WR',w:'Weather-sealed workhorse — sharp corner to corner'},{n:'XF 18mm f/2 R',w:'Compact prime, great for travel & street'}],
+      cloudy:       [{n:'XF 56mm f/1.2 R WR',w:'Beautiful subject separation even in flat light'},{n:'XF 16-80mm f/4 R OIS WR',w:'Versatile all-day zoom with built-in OIS'},{n:'XF 23mm f/1.4 R LM WR',w:'Fast wide prime for environmental portraits'}],
+      golden:       [{n:'XF 56mm f/1.2 R WR',w:'Gorgeous warm bokeh wide open at golden hour'},{n:'XF 50mm f/1.0 R WR',w:'The fastest XF lens — incredible subject isolation'},{n:'XF 90mm f/2 R LM WR',w:'Compression and creamy backgrounds for portraits'}],
+      'indoors-day':[{n:'XF 35mm f/1.4 R',w:'Classic rendering with beautiful character indoors'},{n:'XF 23mm f/1.4 R LM WR',w:'Wide enough for rooms, fast enough for low light'},{n:'XF 16-55mm f/2.8 R LM WR',w:'Constant f/2.8 for flexible indoor shooting'}],
+      'indoors-low':[{n:'XF 56mm f/1.2 R WR',w:'Maximum light gathering for low-light portraits'},{n:'XF 50mm f/1.0 R WR',w:'f/1.0 — the ultimate Fuji low-light prime'},{n:'XF 35mm f/1.4 R',w:'Legendary low-light performer'}],
+      night:        [{n:'XF 23mm f/1.4 R LM WR',w:'Fast & wide — captures city scenes with context'},{n:'XF 35mm f/1.4 R',w:'Classic street focal length, beautiful wide open'},{n:'XF 56mm f/1.2 R WR',w:'Isolate subjects against bokeh city lights'}],
+      portraits:    [{n:'XF 56mm f/1.2 R WR',w:'The go-to portrait lens — 85mm equiv, stunning bokeh'},{n:'XF 90mm f/2 R LM WR',w:'135mm equiv — flattering compression for headshots'},{n:'XF 50mm f/1.0 R WR',w:'Extraordinary subject isolation at f/1.0'}],
+      action:       [{n:'XF 50-140mm f/2.8 R LM OIS WR',w:'Top tracking — near-100% keeper rate at 30fps'},{n:'XF 100-400mm f/4.5-5.6 R LM OIS WR',w:'Wildlife & sports reach with excellent OIS'},{n:'XF 150-600mm f/5.6-8 R LM OIS WR',w:'Maximum reach for birds-in-flight & motorsport'}],
+      macro:        [{n:'XF 80mm f/2.8 R LM OIS WR Macro',w:'The only true 1:1 macro in the XF lineup'},{n:'XF 60mm f/2.4 R Macro',w:'1:2 macro, lightweight and very sharp'},{n:'XF 30mm f/2.8 R LM WR Macro',w:'Compact 1:1 macro, ideal for travel'}],
+    },
+  },
+};
+
+// ══════════════════════════════════════════════════════════════
+// SUNNY 16 DATA
+// ══════════════════════════════════════════════════════════════
+
+const ISO_OPTIONS = [25, 50, 100, 200, 400, 800, 1600, 3200];
+const MAX_SHUTTER = 1000;
+const STD_SHUTTERS = [1,2,4,8,15,30,60,125,250,500,1000];
+const AP_SCALE = ['f/16','f/11','f/8','f/5.6','f/4','f/2.8','f/2','f/1.4'];
+
+const CONDITIONS = [
+  {id:'sunny',  label:'Sunny',          emoji:'☀️', color:'#F59E0B', stops:0, desc:'Bright sun, hard shadows',        film:'Kodak Gold 200 or Portra 400.'},
+  {id:'sl_ov',  label:'Slight Overcast',emoji:'🌤️', color:'#FBBF24', stops:1, desc:'Soft shadows, bright diffuse sky', film:'Portra 160/400 or Fuji Pro 400H.'},
+  {id:'ov',     label:'Overcast',       emoji:'⛅', color:'#94A3B8', stops:2, desc:'Cloudy bright, no visible shadows', film:'Ilford HP5+ (push to 800) or Kodak Ultramax.'},
+  {id:'hvy_ov', label:'Heavy Overcast', emoji:'☁️', color:'#64748B', stops:3, desc:'Heavy clouds, flat light',          film:'Push 1 stop. HP5+ at 800 or Tri-X at 1600.'},
+  {id:'shade',  label:'Open Shade',     emoji:'🌳', color:'#10B981', stops:4, desc:'In shade on a sunny day',           film:'Kodak Tri-X 400 or Cinestill 800T.'},
+  {id:'golden', label:'Golden Hour',    emoji:'🌅', color:'#EA580C', stops:4, desc:'Low sun, warm directional light',   film:'Kodak Portra 400 or Cinestill 800T.'},
+];
+
+// ══════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════
+
+const activeScenario = { xt5: null, xh2s: null };
+const activeTab      = { xt5: 'settings', xh2s: 'settings' };
+let selISO = null, selCond = null;
+
+// ══════════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════════
+
+function h(color, alpha) {
+  return color + Math.round(alpha * 255).toString(16).padStart(2,'0');
+}
+
+function nearStd(v) { return STD_SHUTTERS.reduce((a,b) => Math.abs(b-v)<Math.abs(a-v)?b:a); }
+
+function calcExp(iso, stops) {
+  const raw = iso * Math.pow(2, stops);
+  if (raw <= MAX_SHUTTER) return { ap: AP_SCALE[stops] || 'f/16', sh: nearStd(raw), capped: false, extra: 0 };
+  let cl = 0, adj = raw;
+  while (adj > MAX_SHUTTER && cl < stops) { adj /= 2; cl++; }
+  return { ap: AP_SCALE[Math.max(0, stops - cl)] || 'f/16', sh: nearStd(Math.min(adj, MAX_SHUTTER)), capped: true, extra: cl };
+}
+
+// ══════════════════════════════════════════════════════════════
+// SCREEN SWITCHING
+// ══════════════════════════════════════════════════════════════
+
+function switchScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.screen-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  document.getElementById('tab-' + id).classList.add('active');
+
+  const cam = CAMS[id];
+  const sub = document.getElementById('titleSub');
+  if (cam) { sub.textContent = cam.label; sub.style.color = cam.accent; }
+  else      { sub.textContent = 'Sunny 16 · 35mm'; sub.style.color = '#F59E0B'; }
+}
+
+// ══════════════════════════════════════════════════════════════
+// DIGITAL SCREEN
+// ══════════════════════════════════════════════════════════════
+
+function buildGrid(camKey) {
+  document.getElementById('grid-' + camKey).innerHTML = BASE.map(s => `
+    <div class="scenario-card" id="card-${camKey}-${s.id}" onclick="selectScenario('${camKey}','${s.id}')">
+      <span class="s-emoji">${s.emoji}</span>
+      <span class="s-label">${s.label}</span>
+    </div>
+  `).join('');
+}
+
+function selectScenario(camKey, sid) {
+  const panel = document.getElementById('panel-' + camKey);
+  if (activeScenario[camKey] === sid) {
+    activeScenario[camKey] = null;
+    panel.classList.add('hidden');
+    panel.innerHTML = '';
+    resetCard(camKey, sid);
+    return;
+  }
+  if (activeScenario[camKey]) resetCard(camKey, activeScenario[camKey]);
+  activeScenario[camKey] = sid;
+  activeTab[camKey] = 'settings';
+
+  const s = BASE.find(x => x.id === sid);
+  const card = document.getElementById('card-' + camKey + '-' + sid);
+  card.style.background = h(s.color, 0.2);
+  card.style.borderColor = h(s.color, 0.7);
+  card.querySelector('.s-label').style.color = s.color;
+  card.style.transform = 'scale(1.04)';
+
+  renderPanel(camKey, sid);
+  setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+}
+
+function resetCard(camKey, sid) {
+  const card = document.getElementById('card-' + camKey + '-' + sid);
+  if (!card) return;
+  card.style.background = '';
+  card.style.borderColor = '';
+  card.querySelector('.s-label').style.color = '';
+  card.style.transform = '';
+}
+
+function renderPanel(camKey, sid) {
+  const s = BASE.find(x => x.id === sid);
+  const cam = CAMS[camKey];
+  const panel = document.getElementById('panel-' + camKey);
+
+  panel.className = 'detail-panel';
+  panel.classList.remove('hidden');
+  panel.style.background = `linear-gradient(160deg,${h(s.color, 0.18)},#0a0a0c)`;
+  panel.style.border = `1px solid ${h(s.color, 0.45)}`;
+
+  panel.innerHTML = `
+    <div class="detail-header" style="border-bottom-color:${h(s.color,0.2)};">
+      <div class="detail-header-left">
+        <span class="detail-emoji">${s.emoji}</span>
+        <div>
+          <span class="detail-eyebrow" style="color:${s.color};">${cam.label} · Scenario</span>
+          <h2 class="detail-title">${s.label}</h2>
+        </div>
+      </div>
+      <button class="close-btn" onclick="selectScenario('${camKey}','${sid}')">✕</button>
+    </div>
+    <div class="inner-tabs" id="itabs-${camKey}">
+      ${[['settings','⚙️ Settings'],['cam','📷 '+cam.label],['lenses','🔭 Lenses']].map(([tid,tlbl]) => `
+        <button class="inner-tab ${activeTab[camKey]===tid?'active':''}"
+          style="${activeTab[camKey]===tid?`color:${s.color};border-bottom-color:${s.color};`:''}"
+          onclick="switchInner('${camKey}','${sid}','${tid}')">
+          ${tlbl}
+        </button>
+      `).join('')}
+    </div>
+    <div class="inner-content" id="icontent-${camKey}">
+      ${innerContent(camKey, sid)}
+    </div>
+  `;
+}
+
+function innerContent(camKey, sid) {
+  const s   = BASE.find(x => x.id === sid);
+  const cam = CAMS[camKey];
+  const tab = activeTab[camKey];
+
+  if (tab === 'settings') return `
+    <div class="badges">
+      ${[['ISO',s.iso],['APERTURE',s.ap],['SHUTTER',s.sh]].map(([l,v]) => `
+        <div class="badge" style="border-color:${h(s.color,0.25)};">
+          <span class="badge-label">${l}</span>
+          <span class="badge-value">${v}</span>
+        </div>
+      `).join('')}
+    </div>
+    <div class="info-block" style="background:${h(s.color,0.16)};border:1px solid ${h(s.color,0.38)};">
+      <span class="info-block-label" style="color:${s.color};">📝 Notes</span>
+      <p>${s.notes}</p>
+    </div>
+    <div class="info-block" style="background:#0f0f12;border:1px solid rgba(255,255,255,0.12);">
+      <span class="info-block-label" style="color:rgba(245,242,236,0.5);">💡 General Tip</span>
+      <p style="color:rgba(245,242,236,0.72);">${s.tip}</p>
+    </div>
+  `;
+
+  if (tab === 'cam') return `
+    <div class="info-block" style="background:${h(s.color,0.16)};border:1px solid ${h(s.color,0.38)};">
+      <span class="info-block-label" style="color:${s.color};">🎌 ${cam.label} Tips</span>
+      <p>${cam.tips[sid] || '—'}</p>
+    </div>
+  `;
+
+  if (tab === 'lenses') {
+    const ls = cam.lenses[sid] || [];
+    return `
+      <div class="lens-list" style="border:1px solid ${h(s.color,0.25)};">
+        ${ls.map(l => `
+          <div class="lens-row">
+            <span class="lens-name" style="color:${s.color};">${l.n}</span>
+            <span class="lens-why">${l.w}</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+  return '';
+}
+
+function switchInner(camKey, sid, tid) {
+  activeTab[camKey] = tid;
+  const s = BASE.find(x => x.id === sid);
+  const tabBar = document.getElementById('itabs-' + camKey);
+  tabBar.querySelectorAll('.inner-tab').forEach((b, i) => {
+    const isAct = ['settings','cam','lenses'][i] === tid;
+    b.classList.toggle('active', isAct);
+    b.style.color = isAct ? s.color : '';
+    b.style.borderBottomColor = isAct ? s.color : '';
+  });
+  document.getElementById('icontent-' + camKey).innerHTML = innerContent(camKey, sid);
+}
+
+// ══════════════════════════════════════════════════════════════
+// SUNNY 16
+// ══════════════════════════════════════════════════════════════
+
+function buildISO() {
+  document.getElementById('isoGrid').innerHTML = ISO_OPTIONS.map(iso => `
+    <button class="iso-btn ${selISO===iso?'active':''}" onclick="pickISO(${iso})">ISO ${iso}</button>
+  `).join('');
+}
+
+function pickISO(iso) {
+  selISO = iso;
+  selCond = null;
+  const lbl = document.getElementById('isoLabel');
+  lbl.classList.remove('pending');
+  lbl.textContent = '✓ Film ISO — ISO ' + iso;
+  buildISO();
+  buildConditions();
+  document.getElementById('resultWrap').classList.add('hidden');
+  document.getElementById('resultWrap').innerHTML = '';
+}
+
+function buildConditions() {
+  document.getElementById('condBlock').classList.remove('hidden');
+  const lbl = document.getElementById('condLabel');
+  lbl.classList.add('pending');
+  lbl.textContent = '02 · Select lighting condition';
+
+  document.getElementById('condList').innerHTML = CONDITIONS.map(c => {
+    const exp = calcExp(selISO, c.stops);
+    const isAct = selCond === c.id;
+    return `
+      <button class="condition-btn" onclick="pickCond('${c.id}')"
+        style="${isAct ? `background:${h(c.color,0.18)};border-color:${h(c.color,0.65)};` : ''}">
+        <span class="condition-emoji">${c.emoji}</span>
+        <div class="condition-info">
+          <span class="condition-name" style="${isAct?`color:${c.color};`:''}">${c.label}</span>
+          <span class="condition-desc">${c.desc}</span>
+        </div>
+        <div class="condition-settings">
+          <span class="condition-ap" style="${isAct?`color:${c.color};`:''}">${exp.ap}</span>
+          <span class="condition-sh">1/${exp.sh}</span>
+        </div>
+      </button>
+    `;
+  }).join('');
+}
+
+function pickCond(id) {
+  selCond = id;
+  const lbl = document.getElementById('condLabel');
+  lbl.classList.remove('pending');
+  lbl.textContent = '✓ Condition selected';
+  buildConditions();
+  renderResult();
+}
+
+function renderResult() {
+  const c = CONDITIONS.find(x => x.id === selCond);
+  if (!c || !selISO) return;
+  const exp = calcExp(selISO, c.stops);
+  const wrap = document.getElementById('resultWrap');
+  wrap.classList.remove('hidden');
+
+  wrap.innerHTML = `
+    <div class="result-panel" style="background:linear-gradient(160deg,${h(c.color,0.18)},#0a0a0c);border:1px solid ${h(c.color,0.45)};">
+      <div class="result-header" style="border-bottom-color:${h(c.color,0.2)};">
+        <span style="font-size:22px;">${c.emoji}</span>
+        <div>
+          <span class="result-eyebrow" style="color:${c.color};">03 · Your Exposure</span>
+          <h2 class="result-title">${c.label}</h2>
+        </div>
+      </div>
+      <div class="result-body">
+        <div class="badges">
+          ${[['ISO','ISO '+selISO],['APERTURE',exp.ap],['SHUTTER','1/'+exp.sh]].map(([l,v]) => `
+            <div class="badge" style="border-color:${h(c.color,0.28)};">
+              <span class="badge-label">${l}</span>
+              <span class="badge-value">${v}</span>
+            </div>
+          `).join('')}
+        </div>
+        ${exp.capped ? `
+          <div class="capped-notice">
+            <span class="capped-title">⚡ Shutter capped at 1/1000</span>
+            <p class="capped-body">Aperture closed ${exp.extra} stop${exp.extra>1?'s':''} to ${exp.ap} to keep shutter at 1/1000 — safe for handheld 35mm.</p>
+          </div>
+        ` : ''}
+        ${exp.sh < 60 ? `<div class="warn-notice">⚠️ Shutter is slow — use a tripod or brace firmly for 35mm.</div>` : ''}
+        <div class="info-block" style="background:${h(c.color,0.16)};border:1px solid ${h(c.color,0.38)};">
+          <span class="info-block-label" style="color:${c.color};">🎞️ Film Recommendation</span>
+          <p>${c.film}</p>
+        </div>
+        <div class="info-block" style="background:#0f0f12;border:1px solid rgba(255,255,255,0.12);">
+          <span class="info-block-label" style="color:rgba(245,242,236,0.5);">📷 35mm Shooting Tips</span>
+          <p style="color:rgba(245,242,236,0.72);">Bracket ±1 stop to protect slide film. For negative film, expose slightly to the right — it handles overexposure better than underexposure. Always cross-check your meter against the Sunny 16 result.</p>
+        </div>
+        <button class="reset-btn" onclick="resetS16()">↩ Start Over</button>
+      </div>
+    </div>
+  `;
+  setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+}
+
+function resetS16() {
+  selISO = null; selCond = null;
+  const lbl = document.getElementById('isoLabel');
+  lbl.classList.add('pending');
+  lbl.textContent = '01 · Select your film ISO';
+  document.getElementById('condBlock').classList.add('hidden');
+  document.getElementById('resultWrap').classList.add('hidden');
+  document.getElementById('resultWrap').innerHTML = '';
+  buildISO();
+}
+
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+
+['xt5','xh2s'].forEach(buildGrid);
+buildISO();
+</script>
+</body>
+</html>
