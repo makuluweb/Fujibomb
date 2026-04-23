@@ -1049,6 +1049,17 @@
     <!-- Controls -->
     <div class="lm-controls">
 
+      <!-- Result readout — directly under camera -->
+      <div class="lm-result" id="lmResult">
+        <div class="lm-result-header">
+          <span class="lm-result-title">Recommended Exposure</span>
+          <div class="lm-traffic-dot idle" id="lmDot"></div>
+        </div>
+        <div class="lm-result-body" id="lmResultInner">
+          <div class="lm-traffic-msg idle">Tap meter to take a reading</div>
+        </div>
+      </div>
+
       <!-- Scene anchor — MUST be set before metering -->
       <div class="lm-ctrl-section">
         <span class="lm-ctrl-label">1 · Scene Type <span style="font-size:9px;color:var(--muted);font-family:var(--mono);">(sets base EV — required)</span></span>
@@ -1080,17 +1091,6 @@
       <div class="lm-ctrl-section hidden" id="lmTvRow">
         <span class="lm-ctrl-label">4 · Select Shutter Speed</span>
         <div class="lm-chip-row" id="lmTvChips"></div>
-      </div>
-
-      <!-- Result readout -->
-      <div class="lm-result" id="lmResult">
-        <div class="lm-result-header">
-          <span class="lm-result-title">Recommended Exposure</span>
-          <div class="lm-traffic-dot idle" id="lmDot"></div>
-        </div>
-        <div class="lm-result-body" id="lmResultInner">
-          <div class="lm-traffic-msg idle">Tap meter to take a reading</div>
-        </div>
       </div>
 
       <!-- Calibration -->
