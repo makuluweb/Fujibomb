@@ -1022,6 +1022,8 @@
         <div class="lm-ev-overlay">
           <span class="lm-ev-label">EV</span>
           <span class="lm-ev-val" id="lmEvDisp">—</span>
+          <span class="lm-ev-label" style="margin-top:2px;">LUM</span>
+          <span class="lm-ev-label" id="lmLumDisp" style="font-size:11px;color:rgba(245,184,0,0.7);">—</span>
         </div>
         <div class="lm-scale-wrap">
           <div class="lm-scale-track">
@@ -1047,9 +1049,15 @@
     <!-- Controls -->
     <div class="lm-controls">
 
+      <!-- Scene anchor — MUST be set before metering -->
+      <div class="lm-ctrl-section">
+        <span class="lm-ctrl-label">1 · Scene Type <span style="font-size:9px;color:var(--muted);font-family:var(--mono);">(sets base EV — required)</span></span>
+        <div class="lm-chip-row" id="lmAnchorChips"></div>
+      </div>
+
       <!-- Mode -->
       <div class="lm-ctrl-section">
-        <span class="lm-ctrl-label">Priority Mode</span>
+        <span class="lm-ctrl-label">2 · Priority Mode</span>
         <div class="lm-mode-toggle">
           <button class="lm-mode-btn active" id="lmModeAv" onclick="lmSetMode('Av')">Av · Aperture</button>
           <button class="lm-mode-btn"        id="lmModeTv" onclick="lmSetMode('Tv')">Tv · Shutter</button>
@@ -1058,19 +1066,19 @@
 
       <!-- ISO -->
       <div class="lm-ctrl-section">
-        <span class="lm-ctrl-label">ISO</span>
+        <span class="lm-ctrl-label">3 · ISO</span>
         <div class="lm-chip-row" id="lmISOChips"></div>
       </div>
 
       <!-- Aperture (shown in Av mode) -->
       <div class="lm-ctrl-section" id="lmAvRow">
-        <span class="lm-ctrl-label">Select Aperture</span>
+        <span class="lm-ctrl-label">4 · Select Aperture</span>
         <div class="lm-chip-row" id="lmAvChips"></div>
       </div>
 
       <!-- Shutter (shown in Tv mode) -->
       <div class="lm-ctrl-section hidden" id="lmTvRow">
-        <span class="lm-ctrl-label">Select Shutter Speed</span>
+        <span class="lm-ctrl-label">4 · Select Shutter Speed</span>
         <div class="lm-chip-row" id="lmTvChips"></div>
       </div>
 
@@ -1852,15 +1860,16 @@ function refreshFinishedTab() {
 // ══════════════════════════════════════════════════════════════
 
 // ── State ──
-let lmStream      = null;
-let lmRunning     = false;
-let lmRafId       = null;
-let lmMode        = 'Av';    // 'Av' | 'Tv'
-let lmISO         = 400;
-let lmAv          = 5.6;     // f-number
-let lmTv          = 125;     // shutter denominator (1/Tv s)
-let lmLastEV      = null;
-let lmCalOffset   = 0;       // ½-stop calibration shift
+let lmStream     = null;
+let lmRunning    = false;
+let lmRafId      = null;
+let lmMode       = 'Av';
+let lmISO        = 400;
+let lmAv         = 5.6;
+let lmTv         = 125;
+let lmLastEV     = null;
+let lmCalOffset  = 0;
+let lmAnchorEV   = 12;  // scene-type anchor EV (overcast default)
 
 // ── Tables ──
 const LM_ISO = [25, 50, 100, 200, 400, 800, 1600, 3200, 6400];
@@ -1873,34 +1882,45 @@ const LM_AV = [
 ];
 
 const LM_TV = [
-  {l:'1"',    v:1},   {l:'1/2',  v:2},   {l:'1/4',   v:4},
-  {l:'1/8',   v:8},   {l:'1/15', v:15},  {l:'1/30',  v:30},
-  {l:'1/60',  v:60},  {l:'1/125',v:125}, {l:'1/250', v:250},
-  {l:'1/500', v:500}, {l:'1/1000',v:1000},{l:'1/2000',v:2000},
+  {l:'1"',     v:1},   {l:'1/2',   v:2},   {l:'1/4',   v:4},
+  {l:'1/8',    v:8},   {l:'1/15',  v:15},  {l:'1/30',  v:30},
+  {l:'1/60',   v:60},  {l:'1/125', v:125}, {l:'1/250', v:250},
+  {l:'1/500',  v:500}, {l:'1/1000',v:1000},{l:'1/2000',v:2000},
+];
+
+// Scene anchors: EV100 values for common lighting conditions.
+// iPhone auto-exposes the video stream (pixels always cluster near mid-grey),
+// so absolute luminance is meaningless. Instead the user picks their scene type
+// to set the anchor EV, and the pixel deviation provides ±2 stop fine-tuning.
+const LM_ANCHORS = [
+  {l:'\u2600\ufe0f Bright Sun',     ev:15},
+  {l:'\ud83c\udf24\ufe0f Hazy Sun',       ev:14},
+  {l:'\u26c5 Overcast',       ev:12},
+  {l:'\u2601\ufe0f Heavy Overcast', ev:11},
+  {l:'\ud83c\udf33 Open Shade',     ev:10},
+  {l:'\ud83c\udfd9\ufe0f Indoors/Window', ev:9},
+  {l:'\ud83d\udd6f\ufe0f Indoors/Lamp',   ev:7},
+  {l:'\ud83c\udf03 Night Street',   ev:5},
+  {l:'\ud83c\udf19 Night Low',      ev:3},
 ];
 
 // ── Maths ──
-// Converts average pixel luminance (0-255) to EV at the chosen ISO.
-// Phone cameras auto-expose, so we compensate: the phone targets ~18% grey
-// (middle grey ≈ 128). From that we can back-calculate scene EV.
-// EV100 = log2( N² / t ) where N=aperture, t=shutter(s)
-// Reflected-light formula: EV = log2( L·K / ISO )  K≈12.5 (reflected constant)
-// We map 0-255 luminance to 0-1000 cd/m² (rough phone screen range).
+// Scene EV = anchor + log2(lum/128) * 1.5 + calOffset
+// log2(lum/128): deviation from mid-grey in stops
+// * 1.5: compensates for iPhone AGC dynamic range compression
+// anchor: user-selected scene type EV (ISO-independent)
 function lmLumToEV(lum) {
-  const L = Math.max(lum / 255, 0.001) * 1000; // cd/m²
-  const K = 12.5;
-  return Math.log2((L * K) / lmISO) + lmCalOffset;
+  const deviation = Math.log2(Math.max(lum / 128, 0.001)) * 1.5;
+  return lmAnchorEV + deviation + lmCalOffset;
 }
 
 function lmSolveTv(ev, av) {
-  // EV = log2(av²/t) + log2(ISO/100)
-  // t = av² / 2^(ev - log2(ISO/100))
+  // EV = log2(av^2 / t) + log2(ISO/100)  =>  t = av^2 / 2^(ev - log2(ISO/100))
   const evAdj = ev - Math.log2(lmISO / 100);
-  return (av * av) / Math.pow(2, evAdj); // seconds
+  return (av * av) / Math.pow(2, evAdj);
 }
 
 function lmSolveAv(ev, tvSec) {
-  // av² = tvSec * 2^(ev - log2(ISO/100))
   const evAdj = ev - Math.log2(lmISO / 100);
   return Math.sqrt(Math.max(tvSec * Math.pow(2, evAdj), 0.01));
 }
@@ -1918,17 +1938,14 @@ function lmSampleFrame() {
     if (lmRunning) lmRafId = requestAnimationFrame(lmSampleFrame);
     return;
   }
-
   const W=64, H=48;
   canvas.width=W; canvas.height=H;
   const ctx = canvas.getContext('2d');
   ctx.drawImage(video, 0, 0, W, H);
-
-  // Sample centre spot (middle 30% of frame — classic spot meter)
+  // Spot-meter: sample centre 30% only
   const sx=Math.floor(W*0.35), sy=Math.floor(H*0.35);
   const sw=Math.floor(W*0.3),  sh=Math.floor(H*0.3);
   const data = ctx.getImageData(sx, sy, sw, sh).data;
-
   let sum=0, n=0;
   for (let i=0; i<data.length; i+=4) {
     sum += 0.2126*data[i] + 0.7152*data[i+1] + 0.0722*data[i+2];
@@ -1937,23 +1954,21 @@ function lmSampleFrame() {
   const avgLum = sum / n;
   const ev = lmLumToEV(avgLum);
   lmLastEV = ev;
-
-  lmUpdateDisplay(ev);
+  lmUpdateDisplay(ev, avgLum);
   if (lmRunning) lmRafId = requestAnimationFrame(lmSampleFrame);
 }
 
 // ── Display ──
-function lmUpdateDisplay(ev) {
+function lmUpdateDisplay(ev, rawLum) {
   const evDisp = document.getElementById('lmEvDisp');
   if (evDisp) evDisp.textContent = ev.toFixed(1);
-
-  // Needle: centred at EV 12 (typical outdoor sun), ±3 stop range
-  const EV_MID = 12;
-  const clamped = Math.max(-3, Math.min(3, ev - EV_MID));
+  // Needle centred at anchor EV
+  const clamped = Math.max(-3, Math.min(3, ev - lmAnchorEV));
   const pct = ((clamped + 3) / 6) * 100;
   const needle = document.getElementById('lmNeedle');
   if (needle) needle.style.left = pct + '%';
-
+  const lumDisp = document.getElementById('lmLumDisp');
+  if (lumDisp) lumDisp.textContent = Math.round(rawLum);
   lmRenderResult(ev);
 }
 
@@ -1961,41 +1976,29 @@ function lmRenderResult(ev) {
   const inner = document.getElementById('lmResultInner');
   const dot   = document.getElementById('lmDot');
   if (!inner) return;
-
-  let solvedLabel, solvedVal, fixedLabel, fixedVal;
-  let trafficCls, trafficMsg;
-
+  let solvedLabel, solvedVal, fixedLabel, fixedVal, trafficCls, trafficMsg;
   if (lmMode === 'Av') {
-    // User picked aperture → solve for shutter
-    const tSec     = lmSolveTv(ev, lmAv);
-    const tDenom   = 1 / tSec;
-    const nearest  = nearestTv(tDenom);
-    const diffStop = Math.abs(Math.log2(tDenom) - Math.log2(nearest.v));
-
-    solvedLabel = 'SHUTTER'; solvedVal = fmtTv(nearest.v);
-    fixedLabel  = 'APERTURE'; fixedVal  = fmtAv(lmAv);
-
-    if (diffStop < 0.6) { trafficCls='ok';    trafficMsg='Good exposure'; }
-    else if (tDenom > nearest.v) { trafficCls='over';  trafficMsg='↑ Overexposed — close aperture or add ND'; }
-    else { trafficCls='under'; trafficMsg='↓ Underexposed — open aperture or raise ISO'; }
-
+    const tSec    = lmSolveTv(ev, lmAv);
+    const tDenom  = 1 / tSec;
+    const nearest = nearestTv(tDenom);
+    const diff    = Math.abs(Math.log2(Math.max(tDenom,0.001)) - Math.log2(nearest.v));
+    solvedLabel='SHUTTER'; solvedVal=fmtTv(nearest.v);
+    fixedLabel='APERTURE'; fixedVal=fmtAv(lmAv);
+    if (diff<0.6) { trafficCls='ok'; trafficMsg='Good exposure'; }
+    else if (tDenom>nearest.v) { trafficCls='over'; trafficMsg='\u2191 Overexposed \u2014 close aperture or add ND'; }
+    else { trafficCls='under'; trafficMsg='\u2193 Underexposed \u2014 open aperture or raise ISO'; }
   } else {
-    // User picked shutter → solve for aperture
     const tSec    = 1 / lmTv;
     const avRaw   = lmSolveAv(ev, tSec);
     const nearest = nearestAv(avRaw);
-    const diffStop = Math.abs(Math.log2(avRaw) - Math.log2(nearest.v));
-
-    solvedLabel = 'APERTURE'; solvedVal = nearest.l;
-    fixedLabel  = 'SHUTTER';  fixedVal  = fmtTv(lmTv);
-
-    if (diffStop < 0.6) { trafficCls='ok';    trafficMsg='Good exposure'; }
-    else if (avRaw > nearest.v) { trafficCls='over';  trafficMsg='↑ Overexposed — reduce ISO or add ND'; }
-    else { trafficCls='under'; trafficMsg='↓ Underexposed — increase ISO or slow shutter'; }
+    const diff    = Math.abs(Math.log2(avRaw) - Math.log2(nearest.v));
+    solvedLabel='APERTURE'; solvedVal=nearest.l;
+    fixedLabel='SHUTTER'; fixedVal=fmtTv(lmTv);
+    if (diff<0.6) { trafficCls='ok'; trafficMsg='Good exposure'; }
+    else if (avRaw>nearest.v) { trafficCls='over'; trafficMsg='\u2191 Overexposed \u2014 reduce ISO or add ND'; }
+    else { trafficCls='under'; trafficMsg='\u2193 Underexposed \u2014 increase ISO or slow shutter'; }
   }
-
-  if (dot) { dot.className='lm-traffic-dot '+trafficCls; }
-
+  if (dot) dot.className = 'lm-traffic-dot ' + trafficCls;
   inner.innerHTML = `
     <div class="lm-reading-grid">
       <div class="lm-reading-card">
@@ -2003,7 +2006,7 @@ function lmRenderResult(ev) {
         <span class="lm-rc-val">${lmISO}</span>
       </div>
       <div class="lm-reading-card">
-        <span class="lm-rc-label">Measured EV</span>
+        <span class="lm-rc-label">Scene EV</span>
         <span class="lm-rc-val">${ev.toFixed(1)}</span>
       </div>
       <div class="lm-reading-card">
@@ -2037,7 +2040,7 @@ async function lmStartCamera() {
     const btn = document.getElementById('lmStartBtn');
     btn.classList.add('active');
     document.getElementById('lmBtnLabel').textContent = 'STOP';
-    document.getElementById('lmBtnIcon').textContent  = '■';
+    document.getElementById('lmBtnIcon').textContent  = '\u25a0';
   } catch(e) {
     alert('Camera access denied. Please allow camera access and try again.');
   }
@@ -2049,17 +2052,16 @@ function lmStopCamera() {
   if (lmStream) { lmStream.getTracks().forEach(t=>t.stop()); lmStream=null; }
   document.getElementById('lmIdle').style.display    = 'flex';
   document.getElementById('lmOverlay').style.display = 'none';
-  document.getElementById('lmEvDisp').textContent    = '—';
+  document.getElementById('lmEvDisp').textContent    = '\u2014';
   const btn = document.getElementById('lmStartBtn');
   if (btn) {
     btn.classList.remove('active');
     document.getElementById('lmBtnLabel').textContent = 'METER';
-    document.getElementById('lmBtnIcon').textContent  = '●';
+    document.getElementById('lmBtnIcon').textContent  = '\u25cf';
   }
-  // Reset result to idle
   const inner = document.getElementById('lmResultInner');
   const dot   = document.getElementById('lmDot');
-  if (inner) inner.innerHTML = `<div class="lm-traffic-msg idle">Tap meter to take a reading</div>`;
+  if (inner) inner.innerHTML = '<div class="lm-traffic-msg idle">Tap meter to take a reading</div>';
   if (dot)   dot.className   = 'lm-traffic-dot idle';
 }
 
@@ -2069,31 +2071,38 @@ function lmToggle() {
 
 // ── UI builders ──
 function lmInit() {
-  lmBuildISO(); lmBuildAv(); lmBuildTv();
+  lmBuildISO(); lmBuildAv(); lmBuildTv(); lmBuildAnchors();
   lmUpdateCalDisplay();
 }
 
 function lmBuildISO() {
   document.getElementById('lmISOChips').innerHTML = LM_ISO.map(iso =>
-    `<button class="lm-chip ${iso===lmISO?'active':''}" onclick="lmPickISO(${iso})">${iso}</button>`
+    '<button class="lm-chip ' + (iso===lmISO?'active':'') + '" onclick="lmPickISO(' + iso + ')">' + iso + '</button>'
   ).join('');
 }
 
 function lmBuildAv() {
   document.getElementById('lmAvChips').innerHTML = LM_AV.map(a =>
-    `<button class="lm-chip ${a.v===lmAv?'active':''}" onclick="lmPickAv(${a.v})">${a.l}</button>`
+    '<button class="lm-chip ' + (a.v===lmAv?'active':'') + '" onclick="lmPickAv(' + a.v + ')">' + a.l + '</button>'
   ).join('');
 }
 
 function lmBuildTv() {
   document.getElementById('lmTvChips').innerHTML = LM_TV.map(t =>
-    `<button class="lm-chip ${t.v===lmTv?'active':''}" onclick="lmPickTv(${t.v})">${t.l}</button>`
+    '<button class="lm-chip ' + (t.v===lmTv?'active':'') + '" onclick="lmPickTv(' + t.v + ')">' + t.l + '</button>'
   ).join('');
 }
 
-function lmPickISO(iso) { lmISO=iso; lmBuildISO(); if(lmLastEV!==null) lmRenderResult(lmLastEV); }
-function lmPickAv(av)   { lmAv=av;   lmBuildAv();  if(lmLastEV!==null) lmRenderResult(lmLastEV); }
-function lmPickTv(tv)   { lmTv=tv;   lmBuildTv();  if(lmLastEV!==null) lmRenderResult(lmLastEV); }
+function lmBuildAnchors() {
+  document.getElementById('lmAnchorChips').innerHTML = LM_ANCHORS.map(a =>
+    '<button class="lm-chip ' + (a.ev===lmAnchorEV?'active':'') + '" onclick="lmPickAnchor(' + a.ev + ')" style="font-size:10px;">' + a.l + '</button>'
+  ).join('');
+}
+
+function lmPickISO(iso)   { lmISO=iso;       lmBuildISO();     if(lmLastEV!==null) lmRenderResult(lmLastEV); }
+function lmPickAv(av)     { lmAv=av;         lmBuildAv();      if(lmLastEV!==null) lmRenderResult(lmLastEV); }
+function lmPickTv(tv)     { lmTv=tv;         lmBuildTv();      if(lmLastEV!==null) lmRenderResult(lmLastEV); }
+function lmPickAnchor(ev) { lmAnchorEV=ev;   lmBuildAnchors(); if(lmLastEV!==null) lmRenderResult(lmLastEV); }
 
 function lmSetMode(mode) {
   lmMode = mode;
