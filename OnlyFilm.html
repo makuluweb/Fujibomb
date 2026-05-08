@@ -1,0 +1,2133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OnlyFilm · Field Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;700&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* ── Kodak Gold 200 palette ── */
+    --bg:            #f5edd6;        /* warm cream — the box */
+    --bg2:           #ede0be;        /* slightly deeper cream */
+    --surface:       #e8d9b0;        /* card surfaces */
+    --surface2:      #dfd0a0;        /* deeper card */
+    --border:        rgba(120,80,20,0.18);
+    --border-strong: rgba(120,80,20,0.32);
+    --text:          #1e1208;        /* very dark warm brown */
+    --text2:         #3d2a0e;        /* secondary text */
+    --muted:         rgba(62,40,10,0.5);
+    --kodak-gold:    #f5b800;        /* iconic Kodak yellow-gold */
+    --kodak-red:     #cc1e1e;        /* Kodak logo red */
+    --kodak-orange:  #e07020;        /* warm amber-orange */
+    --kodak-dark:    #1e1208;        /* near-black warm */
+    --film-accent:   #cc1e1e;        /* film tracker = Kodak red */
+    --mono:          'IBM Plex Mono', monospace;
+    --display:       'Bebas Neue', sans-serif;
+    --serif:         'Playfair Display', serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── halide grain overlay — feels like film stock ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.055'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 1;
+    mix-blend-mode: multiply;
+  }
+
+  /* ── sprocket-hole decorative stripe at top ── */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 5px;
+    background: repeating-linear-gradient(90deg, var(--kodak-gold) 0px, var(--kodak-gold) 28px, var(--kodak-dark) 28px, var(--kodak-dark) 36px);
+    z-index: 999;
+  }
+
+  /* ── header ── */
+  .header {
+    padding: 30px 20px 0;
+    border-bottom: 2px solid var(--kodak-dark);
+    animation: fadeDown 0.5s ease both;
+    background: var(--bg);
+    position: relative;
+  }
+
+  /* Kodak-style product stripe */
+  .header::before {
+    content: 'ONLYFILM · SUNNY 16 · FILM TRACKER · LIGHT METER';
+    display: block;
+    font-family: var(--display);
+    font-size: 8px;
+    letter-spacing: 0.25em;
+    color: var(--kodak-red);
+    margin-bottom: 10px;
+    opacity: 0.75;
+  }
+
+  .eyebrow {
+    font-family: var(--display);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    color: var(--muted);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    display: block;
+  }
+
+  .header-title {
+    font-family: var(--display);
+    font-size: clamp(36px, 10vw, 56px);
+    font-weight: 400;
+    line-height: 0.92;
+    letter-spacing: 0.04em;
+    padding-bottom: 16px;
+    color: var(--kodak-dark);
+  }
+
+  .header-title .subtitle {
+    font-size: 0.62em;
+    font-family: var(--display);
+    letter-spacing: 0.08em;
+  }
+
+  /* ── tabs ── */
+  .screen-tabs {
+    display: flex;
+    border-top: 2px solid var(--kodak-dark);
+    background: var(--kodak-dark);
+    gap: 1px;
+  }
+
+  .screen-tab {
+    flex: 1; padding: 10px 4px;
+    background: var(--surface);
+    color: var(--text2);
+    font-family: var(--display);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+  }
+
+  .screen-tab .ti { font-size: 15px; }
+
+  .screen-tab.active {
+    border-bottom-color: var(--tab-accent, #f5b800);
+    color: var(--tab-accent, #f5b800);
+    background: color-mix(in srgb, var(--tab-accent, #f5b800) 10%, transparent);
+  }
+
+  /* ── screens ── */
+  .screen { display: none; }
+  .screen.active { display: block; animation: slideUp 0.3s cubic-bezier(0.22,1,0.36,1) both; }
+
+  /* ── scenario grid ── */
+  .scenario-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; padding: 14px; }
+
+  .scenario-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border-strong);
+    border-radius: 8px;
+    padding: 13px 8px;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.18s ease, border-color 0.2s, background 0.2s, box-shadow 0.2s;
+    -webkit-tap-highlight-color: transparent;
+    box-shadow: 0 2px 6px rgba(62,40,10,0.1);
+  }
+
+  .scenario-card:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(62,40,10,0.18); }
+  .scenario-card .se { font-size: 20px; line-height: 1; }
+  .scenario-card .sl {
+    font-family: var(--display);
+    font-size: 9px;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    color: var(--text2);
+    line-height: 1.3;
+    text-transform: uppercase;
+  }
+
+  /* ── detail panel ── */
+  .detail-panel {
+    margin: 0 14px 26px;
+    border-radius: 10px;
+    overflow: hidden;
+    animation: slideUp 0.3s cubic-bezier(0.22,1,0.36,1) both;
+    box-shadow: 0 4px 20px rgba(62,40,10,0.2);
+    border: 1.5px solid var(--border-strong);
+  }
+
+  .dp-header {
+    padding: 14px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1.5px solid var(--border-strong);
+    background: var(--surface);
+  }
+
+  .dp-left { display: flex; align-items: center; gap: 10px; }
+  .dp-emoji { font-size: 22px; }
+
+  .dp-eyebrow {
+    font-family: var(--display);
+    font-size: 8px; letter-spacing: 0.18em; margin-bottom: 2px; text-transform: uppercase;
+    font-weight: 400; display: block;
+  }
+
+  .dp-title {
+    font-family: var(--serif);
+    font-size: 18px; font-weight: 700;
+    color: var(--kodak-dark);
+  }
+
+  .close-btn {
+    background: rgba(62,40,10,0.1);
+    border: 1.5px solid var(--border-strong);
+    border-radius: 50%;
+    width: 28px; height: 28px;
+    color: var(--text2);
+    font-size: 12px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .close-btn:hover { background: rgba(62,40,10,0.2); }
+
+  /* ── inner tabs ── */
+  .inner-tabs {
+    display: flex;
+    border-bottom: 1.5px solid var(--border-strong);
+    background: var(--surface2);
+  }
+
+  .inner-tab {
+    flex: 1; padding: 9px 4px;
+    background: transparent;
+    font-family: var(--display);
+    font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+    border: none; border-bottom: 2px solid transparent;
+    color: var(--muted);
+    cursor: pointer; transition: all 0.18s;
+  }
+
+  .inner-content { padding: 13px 14px; background: var(--bg); }
+
+  /* ── badges ── */
+  .badges { display: flex; gap: 7px; margin-bottom: 11px; }
+
+  .badge {
+    flex: 1;
+    background: var(--kodak-dark);
+    border-radius: 8px;
+    padding: 10px 6px;
+    text-align: center;
+    border: 1.5px solid var(--kodak-dark);
+  }
+
+  .bl {
+    font-family: var(--display);
+    font-size: 7px; letter-spacing: 0.18em; color: rgba(245,237,210,0.6);
+    margin-bottom: 5px; text-transform: uppercase; display: block;
+  }
+
+  .bv {
+    font-family: var(--mono);
+    font-size: 11px; font-weight: 700; color: var(--kodak-gold);
+    line-height: 1.2; display: block;
+  }
+
+  /* ── info blocks ── */
+  .ib { border-radius: 8px; padding: 12px 13px; margin-bottom: 8px; }
+
+  .ibl {
+    font-family: var(--display);
+    font-size: 8px; letter-spacing: 0.16em; text-transform: uppercase;
+    margin-bottom: 6px; font-weight: 400; display: block;
+  }
+
+  .ib p {
+    font-family: var(--mono);
+    font-size: 11px; line-height: 1.72; color: var(--text2);
+  }
+
+  /* ── lens list ── */
+  .lens-list {
+    background: var(--kodak-dark);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .lens-row { padding: 11px 13px; border-bottom: 1px solid rgba(245,184,0,0.15); }
+  .lens-row:last-child { border-bottom: none; }
+  .ln { font-family: var(--mono); font-size: 10px; font-weight: 700; margin-bottom: 3px; line-height: 1.3; display: block; color: var(--kodak-gold); }
+  .lw { font-family: var(--mono); font-size: 10px; color: rgba(245,237,210,0.65); line-height: 1.45; display: block; }
+
+  /* ── sunny 16 ── */
+  .s16-box {
+    margin: 14px 14px 0;
+    background: var(--kodak-dark);
+    border: 1.5px solid var(--kodak-gold);
+    border-radius: 10px;
+    padding: 14px;
+    box-shadow: 0 2px 10px rgba(245,184,0,0.15);
+  }
+
+  .s16-ey {
+    font-family: var(--display);
+    font-size: 9px; letter-spacing: 0.2em; color: var(--kodak-gold);
+    margin-bottom: 7px; text-transform: uppercase; display: block;
+  }
+
+  .s16-box p { font-size: 11px; color: rgba(245,237,210,0.88); line-height: 1.72; }
+  .s16-box strong { color: var(--kodak-gold); }
+
+  .step-blk { margin: 13px 14px 0; }
+
+  .step-lbl {
+    font-family: var(--display);
+    font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase;
+    margin-bottom: 8px; display: block; color: var(--muted);
+  }
+
+  .step-lbl.pending { color: var(--kodak-orange); }
+
+  .iso-grid { display: flex; flex-wrap: wrap; gap: 7px; }
+
+  .iso-btn {
+    padding: 8px 12px;
+    background: var(--surface);
+    border: 1.5px solid var(--border-strong);
+    border-radius: 7px;
+    color: var(--text2);
+    font-family: var(--mono);
+    font-size: 11px; font-weight: 700;
+    cursor: pointer; transition: all 0.15s;
+    box-shadow: 0 1px 4px rgba(62,40,10,0.12);
+  }
+
+  .iso-btn:hover { background: var(--surface2); border-color: var(--kodak-orange); }
+
+  .iso-btn.active {
+    background: var(--kodak-gold);
+    border-color: var(--kodak-gold);
+    color: var(--kodak-dark);
+  }
+
+  .cond-list { display: flex; flex-direction: column; gap: 7px; }
+
+  .cond-btn {
+    display: flex; align-items: center; gap: 11px;
+    padding: 11px 13px;
+    background: var(--surface);
+    border: 1.5px solid var(--border-strong);
+    border-radius: 10px;
+    cursor: pointer; text-align: left; transition: all 0.15s;
+    width: 100%; font-family: var(--mono);
+    color: var(--text);
+    box-shadow: 0 1px 4px rgba(62,40,10,0.1);
+  }
+
+  .cond-btn:hover { background: var(--surface2); border-color: var(--kodak-orange); }
+
+  .cem { font-size: 17px; flex-shrink: 0; }
+  .cinfo { flex: 1; }
+
+  .cn {
+    font-family: var(--display);
+    font-size: 11px; color: var(--text); margin-bottom: 2px;
+    text-transform: uppercase; letter-spacing: 0.06em; display: block;
+  }
+
+  .cd { font-size: 9px; color: var(--muted); display: block; }
+  .cset { text-align: right; flex-shrink: 0; }
+  .cap { font-family: var(--mono); font-size: 10px; font-weight: 700; color: var(--text2); display: block; }
+  .csh { font-size: 9px; color: var(--muted); margin-top: 1px; display: block; }
+
+  .result-panel { border-radius: 10px; overflow: hidden; border: 1.5px solid var(--border-strong); box-shadow: 0 4px 16px rgba(62,40,10,0.18); }
+
+  .rh {
+    padding: 14px 16px;
+    display: flex; align-items: center; gap: 9px;
+    border-bottom: 1.5px solid var(--border-strong);
+    background: var(--surface);
+  }
+
+  .rey {
+    font-family: var(--display);
+    font-size: 8px; letter-spacing: 0.18em; text-transform: uppercase;
+    margin-bottom: 2px; display: block;
+  }
+
+  .rt { font-family: var(--display); font-size: 24px; color: var(--kodak-dark); letter-spacing: 0.04em; }
+  .rb { padding: 13px 14px; background: var(--bg); }
+
+  .capped-n { background: rgba(204,30,30,0.1); border: 1.5px solid rgba(204,30,30,0.3); border-radius: 8px; padding: 9px 12px; margin-bottom: 10px; }
+  .capped-t { font-family: var(--display); font-size: 8px; letter-spacing: 0.14em; color: var(--kodak-red); text-transform: uppercase; margin-bottom: 3px; display: block; }
+  .capped-b { font-size: 10px; color: var(--text2); line-height: 1.55; }
+
+  .warn-n { background: rgba(204,30,30,0.08); border: 1.5px solid rgba(204,30,30,0.25); border-radius: 8px; padding: 9px 12px; margin-bottom: 10px; font-size: 10px; color: var(--kodak-red); line-height: 1.5; }
+
+  .reset-btn {
+    width: 100%; padding: 10px;
+    background: var(--surface2);
+    border: 1.5px solid var(--border-strong);
+    border-radius: 10px; color: var(--muted);
+    font-family: var(--display); font-size: 11px; letter-spacing: 0.1em;
+    cursor: pointer; transition: all 0.15s; margin-top: 3px;
+  }
+  .reset-btn:hover { background: var(--surface); border-color: var(--kodak-orange); }
+
+  /* ═══════════════════════════════════════
+     FILM TRACKER — Kodak style
+  ═══════════════════════════════════════ */
+  .film-screen { padding: 14px 14px 60px; }
+
+  .film-nav {
+    display: flex;
+    background: var(--kodak-dark);
+    border-radius: 10px;
+    padding: 3px;
+    gap: 3px;
+    margin-bottom: 16px;
+    border: 1.5px solid var(--kodak-dark);
+  }
+
+  .film-nav-btn {
+    flex: 1; padding: 8px 4px;
+    font-family: var(--display); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+    border: none; border-radius: 7px;
+    cursor: pointer; transition: all 0.18s;
+    color: rgba(245,237,210,0.5);
+    background: transparent;
+  }
+
+  .film-nav-btn.active { background: var(--kodak-gold); color: var(--kodak-dark); }
+
+  .film-sub { display: none; }
+  .film-sub.active { display: block; animation: slideUp 0.28s cubic-bezier(0.22,1,0.36,1) both; }
+
+  .fsec-title {
+    font-family: var(--display);
+    font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--kodak-red); margin-bottom: 12px; display: block;
+  }
+
+  /* form elements */
+  .f-field { margin-bottom: 11px; }
+
+  .f-label {
+    font-family: var(--display);
+    font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 5px; display: block;
+  }
+
+  .f-input, .f-select {
+    width: 100%; padding: 10px 12px;
+    background: var(--surface);
+    border: 1.5px solid var(--border-strong);
+    border-radius: 9px; color: var(--text);
+    font-family: var(--mono); font-size: 12px;
+    outline: none; transition: border-color 0.15s;
+    -webkit-appearance: none; appearance: none;
+    box-shadow: 0 1px 4px rgba(62,40,10,0.1);
+  }
+
+  .f-input:focus, .f-select:focus { border-color: var(--kodak-orange); }
+  .f-input::placeholder { color: var(--muted); }
+  .f-select option { background: var(--surface); color: var(--text); }
+
+  .f-row { display: flex; gap: 10px; }
+  .f-row .f-field { flex: 1; }
+
+  .f-btn {
+    width: 100%; padding: 12px; border-radius: 10px;
+    font-family: var(--display); font-size: 12px; letter-spacing: 0.1em;
+    cursor: pointer; transition: all 0.15s; border: none; text-transform: uppercase;
+  }
+
+  .f-btn-primary { background: var(--kodak-gold); color: var(--kodak-dark); border: none; }
+  .f-btn-primary:hover { background: var(--kodak-orange); }
+  .f-btn-outline { background: var(--surface); border: 1.5px solid var(--border-strong); color: var(--text2); }
+  .f-btn-outline:hover { background: var(--surface2); border-color: var(--kodak-orange); }
+  .f-btn-danger { background: rgba(204,30,30,0.1); border: 1.5px solid rgba(204,30,30,0.35); color: var(--kodak-red); }
+  .f-btn-danger:hover { background: rgba(204,30,30,0.2); }
+
+  .item-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border-strong);
+    border-radius: 11px;
+    padding: 12px 13px; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 11px;
+    cursor: pointer; transition: all 0.15s;
+    box-shadow: 0 1px 6px rgba(62,40,10,0.1);
+  }
+
+  .item-card:hover { background: var(--surface2); border-color: var(--kodak-orange); }
+  .item-card.selected { border-color: var(--kodak-red); background: rgba(204,30,30,0.06); }
+
+  .ic-icon { font-size: 20px; flex-shrink: 0; }
+  .ic-info { flex: 1; }
+  .ic-name { font-family: var(--display); font-size: 13px; letter-spacing: 0.04em; color: var(--text); display: block; margin-bottom: 2px; text-transform: uppercase; }
+  .ic-sub { font-family: var(--mono); font-size: 9px; color: var(--muted); display: block; }
+  .ic-badge { font-family: var(--display); font-size: 8px; letter-spacing: 0.1em; padding: 3px 8px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; text-transform: uppercase; }
+
+  .badge-loaded   { background: rgba(16,150,60,0.15);   color: #0d7a30;   border: 1px solid rgba(16,150,60,0.35); }
+  .badge-shooting { background: rgba(245,184,0,0.18);   color: #a07800;   border: 1px solid rgba(245,184,0,0.4); }
+  .badge-done     { background: rgba(100,80,40,0.15);   color: var(--muted); border: 1px solid var(--border); }
+  .badge-empty    { background: rgba(62,40,10,0.06);    color: var(--muted); border: 1px solid var(--border); }
+
+  .prog-bar { background: rgba(62,40,10,0.12); border-radius: 20px; height: 5px; margin: 7px 0 3px; overflow: hidden; }
+  .prog-fill { height: 100%; border-radius: 20px; background: var(--kodak-gold); transition: width 0.4s; }
+
+  .roll-detail {
+    background: var(--kodak-dark);
+    border: 1.5px solid var(--kodak-gold);
+    border-radius: 10px; padding: 14px; margin-top: 7px;
+    animation: slideUp 0.25s ease both;
+    box-shadow: 0 4px 16px rgba(245,184,0,0.12);
+  }
+
+  .rd-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid rgba(245,184,0,0.1); }
+  .rd-row:last-child { border-bottom: none; }
+  .rd-key { font-family: var(--display); font-size: 8px; color: rgba(245,237,210,0.5); text-transform: uppercase; letter-spacing: 0.12em; }
+  .rd-val { font-family: var(--mono); font-size: 11px; font-weight: 700; color: rgba(245,237,210,0.92); }
+
+  .exp-counter { display: flex; align-items: center; gap: 10px; margin: 10px 0; }
+  .exp-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 1.5px solid var(--kodak-gold);
+    background: transparent;
+    color: var(--kodak-gold);
+    font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.15s;
+    font-family: var(--mono);
+  }
+  .exp-btn:hover { background: var(--kodak-gold); color: var(--kodak-dark); }
+  .exp-num { flex: 1; text-align: center; font-size: 32px; font-weight: 700; font-family: var(--display); color: var(--kodak-gold); letter-spacing: 0.04em; }
+  .exp-total { font-size: 10px; color: rgba(245,237,210,0.5); text-align: center; margin-bottom: 8px; font-family: var(--display); letter-spacing: 0.1em; text-transform: uppercase; }
+
+  .empty-state { text-align: center; padding: 30px 16px; color: var(--muted); }
+  .empty-icon { font-size: 36px; margin-bottom: 10px; display: block; }
+  .empty-text { font-size: 11px; line-height: 1.6; font-family: var(--mono); }
+
+  /* ISO chips */
+  .iso-chip-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+  .iso-chip {
+    padding: 6px 11px;
+    background: var(--surface);
+    border: 1.5px solid var(--border-strong);
+    border-radius: 7px;
+    color: var(--text2);
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .iso-chip:hover { background: var(--surface2); border-color: var(--kodak-orange); }
+  .iso-chip.active { background: var(--kodak-gold); border-color: var(--kodak-gold); color: var(--kodak-dark); }
+
+  .divider { height: 1.5px; background: rgba(62,40,10,0.12); margin: 13px 0; }
+
+  input[type="date"] { color-scheme: light; }
+
+  .mt10 { margin-top: 10px; }
+  .mt14 { margin-top: 14px; }
+  .hidden { display: none !important; }
+
+
+  /* ═══════════════════════════════════════
+     LIGHT METER
+  ═══════════════════════════════════════ */
+  .lm-wrap { padding: 14px 14px 60px; }
+
+  /* ── viewfinder ── */
+  .lm-viewfinder {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: #0a0a08;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid var(--kodak-dark);
+    box-shadow: inset 0 0 40px rgba(0,0,0,0.6), 0 4px 16px rgba(30,18,8,0.4);
+    margin-bottom: 14px;
+  }
+
+  .lm-video {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* hidden canvas for pixel sampling */
+  .lm-canvas { display: none; }
+
+  /* ── overlay UI on viewfinder ── */
+  .lm-vf-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  /* corner brackets */
+  .lm-vf-overlay::before, .lm-vf-overlay::after {
+    content: '';
+    position: absolute;
+    width: 22px; height: 22px;
+    border-color: var(--kodak-gold);
+    border-style: solid;
+    opacity: 0.85;
+  }
+  .lm-vf-overlay::before { top: 12px; left: 12px; border-width: 2px 0 0 2px; }
+  .lm-vf-overlay::after  { bottom: 12px; right: 12px; border-width: 0 2px 2px 0; }
+
+  /* spot meter circle */
+  .lm-spot {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 56px; height: 56px;
+    border: 1.5px solid rgba(245,184,0,0.7);
+    border-radius: 50%;
+  }
+  .lm-spot::before, .lm-spot::after {
+    content: '';
+    position: absolute;
+    background: rgba(245,184,0,0.6);
+  }
+  .lm-spot::before { width: 1px; height: 12px; top: -8px; left: 50%; transform: translateX(-50%); }
+  .lm-spot::after  { width: 12px; height: 1px; left: -8px; top: 50%; transform: translateY(-50%); }
+
+  /* EV readout overlay */
+  .lm-ev-overlay {
+    position: absolute;
+    top: 10px; right: 12px;
+    background: rgba(10,8,0,0.72);
+    border: 1px solid rgba(245,184,0,0.4);
+    border-radius: 7px;
+    padding: 5px 10px;
+    text-align: right;
+  }
+
+  .lm-ev-label {
+    font-family: var(--display);
+    font-size: 8px;
+    letter-spacing: 0.14em;
+    color: rgba(245,184,0,0.6);
+    display: block;
+    text-transform: uppercase;
+  }
+
+  .lm-ev-val {
+    font-family: var(--display);
+    font-size: 26px;
+    color: var(--kodak-gold);
+    line-height: 1;
+    letter-spacing: 0.04em;
+  }
+
+  /* needle scale overlay */
+  .lm-scale-wrap {
+    position: absolute;
+    bottom: 14px; left: 14px; right: 14px;
+  }
+
+  .lm-scale-track {
+    position: relative;
+    height: 4px;
+    background: rgba(245,242,220,0.2);
+    border-radius: 2px;
+    overflow: visible;
+  }
+
+  /* centre tick */
+  .lm-scale-track::after {
+    content: '';
+    position: absolute;
+    top: -4px; left: 50%;
+    transform: translateX(-50%);
+    width: 2px; height: 12px;
+    background: rgba(245,184,0,0.7);
+    border-radius: 1px;
+  }
+
+  .lm-scale-needle {
+    position: absolute;
+    top: -5px;
+    width: 3px; height: 14px;
+    background: var(--kodak-gold);
+    border-radius: 2px;
+    transform: translateX(-50%);
+    transition: left 0.25s ease;
+    left: 50%;
+    box-shadow: 0 0 8px rgba(245,184,0,0.9);
+  }
+
+  .lm-scale-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 5px;
+  }
+
+  .lm-scale-labels span {
+    font-family: var(--display);
+    font-size: 9px;
+    color: rgba(245,242,220,0.6);
+    letter-spacing: 0.05em;
+  }
+
+  /* idle / no camera state */
+  .lm-idle {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: #0a0a08;
+  }
+
+  .lm-idle-icon { font-size: 36px; opacity: 0.55; }
+
+  .lm-idle-text {
+    font-family: var(--display);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    color: rgba(245,184,0,0.5);
+    text-transform: uppercase;
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  /* shutter button */
+  .lm-shutter-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 16px;
+  }
+
+  .lm-shutter-btn {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: var(--kodak-gold);
+    border: 3px solid var(--kodak-dark);
+    box-shadow: 0 0 0 2px var(--kodak-gold), 0 4px 16px rgba(30,18,8,0.4);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    transition: all 0.18s;
+    font-family: var(--display);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: var(--kodak-dark);
+    text-transform: uppercase;
+  }
+
+  .lm-shutter-btn:hover { transform: scale(1.06); }
+  .lm-shutter-btn.active {
+    background: var(--kodak-red);
+    box-shadow: 0 0 0 2px var(--kodak-red), 0 4px 20px rgba(204,30,30,0.5);
+    color: #fff;
+  }
+
+  .lm-shutter-icon { font-size: 18px; line-height: 1; }
+
+  /* ── controls ── */
+  .lm-controls { display: flex; flex-direction: column; gap: 12px; }
+
+  /* mode toggle */
+  .lm-mode-toggle {
+    display: flex;
+    background: var(--kodak-dark);
+    border-radius: 10px;
+    padding: 3px;
+    gap: 3px;
+  }
+
+  .lm-mode-btn {
+    flex: 1;
+    padding: 9px 4px;
+    font-family: var(--display);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.18s;
+    color: rgba(245,237,210,0.45);
+    background: transparent;
+  }
+
+  .lm-mode-btn.active { background: var(--kodak-gold); color: var(--kodak-dark); }
+
+  /* control rows */
+  .lm-ctrl-section {
+    background: var(--surface);
+    border: 1.5px solid var(--border-strong);
+    border-radius: 12px;
+    padding: 12px 13px;
+    box-shadow: 0 1px 6px rgba(62,40,10,0.1);
+  }
+
+  .lm-ctrl-label {
+    font-family: var(--display);
+    font-size: 8px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .lm-chip-row { display: flex; flex-wrap: wrap; gap: 5px; }
+
+  .lm-chip {
+    padding: 6px 10px;
+    background: var(--bg);
+    border: 1.5px solid var(--border-strong);
+    border-radius: 7px;
+    color: var(--text2);
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .lm-chip:hover { background: var(--surface2); border-color: var(--kodak-orange); }
+  .lm-chip.active { background: var(--kodak-gold); border-color: var(--kodak-gold); color: var(--kodak-dark); }
+
+  /* ── result readout ── */
+  .lm-result {
+    background: var(--kodak-dark);
+    border: 1.5px solid var(--kodak-gold);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(245,184,0,0.15);
+  }
+
+  .lm-result-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(245,184,0,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .lm-result-title {
+    font-family: var(--display);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: rgba(245,184,0,0.7);
+    text-transform: uppercase;
+  }
+
+  .lm-traffic-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .lm-traffic-dot.ok    { background: #4ade80; box-shadow: 0 0 8px #4ade80; }
+  .lm-traffic-dot.over  { background: #f87171; box-shadow: 0 0 8px #f87171; }
+  .lm-traffic-dot.under { background: #60a5fa; box-shadow: 0 0 8px #60a5fa; }
+  .lm-traffic-dot.idle  { background: rgba(245,184,0,0.3); }
+
+  .lm-result-body { padding: 12px 14px; }
+
+  .lm-reading-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .lm-reading-card {
+    background: rgba(245,184,0,0.07);
+    border: 1px solid rgba(245,184,0,0.18);
+    border-radius: 9px;
+    padding: 10px 10px;
+    text-align: center;
+  }
+
+  .lm-reading-card.highlight {
+    background: rgba(245,184,0,0.15);
+    border-color: rgba(245,184,0,0.45);
+  }
+
+  .lm-rc-label {
+    font-family: var(--display);
+    font-size: 8px;
+    letter-spacing: 0.14em;
+    color: rgba(245,184,0,0.55);
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .lm-rc-val {
+    font-family: var(--display);
+    font-size: 22px;
+    color: var(--kodak-gold);
+    letter-spacing: 0.04em;
+    line-height: 1;
+    display: block;
+  }
+
+  .lm-rc-fixed {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: rgba(245,184,0,0.4);
+    display: block;
+    margin-top: 3px;
+  }
+
+  .lm-traffic-msg {
+    font-family: var(--display);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 8px 12px;
+    border-radius: 8px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .lm-traffic-msg.ok    { background: rgba(74,222,128,0.12); color: #4ade80; border: 1px solid rgba(74,222,128,0.3); }
+  .lm-traffic-msg.over  { background: rgba(248,113,113,0.12); color: #f87171; border: 1px solid rgba(248,113,113,0.3); }
+  .lm-traffic-msg.under { background: rgba(96,165,250,0.12);  color: #93c5fd; border: 1px solid rgba(96,165,250,0.3); }
+  .lm-traffic-msg.idle  { background: rgba(245,184,0,0.07); color: rgba(245,184,0,0.45); border: 1px solid rgba(245,184,0,0.15); }
+
+  /* calibration row */
+  .lm-cal-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .lm-cal-btn {
+    padding: 6px 12px;
+    font-family: var(--display);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    background: var(--surface);
+    border: 1.5px solid var(--border-strong);
+    border-radius: 7px;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  .lm-cal-btn:hover { background: var(--surface2); }
+
+  .lm-cal-val {
+    font-family: var(--display);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    color: var(--text);
+    flex: 1;
+    text-align: center;
+  }
+
+  .lm-cal-label {
+    font-family: var(--display);
+    font-size: 8px;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    text-transform: uppercase;
+    text-align: center;
+    display: block;
+    margin-top: 2px;
+  }
+
+  @keyframes lm-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .lm-shutter-btn.active .lm-shutter-icon { animation: lm-pulse 1.2s ease infinite; }
+
+  @keyframes fadeDown { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes slideUp  { from{opacity:0;transform:translateY(14px)}  to{opacity:1;transform:translateY(0)} }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <span class="eyebrow">OnlyFilm · Field Guide</span>
+  <h1 class="header-title">
+    OnlyFilm<br>
+    <span class="subtitle" id="titleSub" style="color:#cc1e1e;">Sunny 16 · 35mm</span>
+  </h1>
+  <div class="screen-tabs">
+    <button class="screen-tab active" style="--tab-accent:#cc1e1e;" onclick="switchScreen('s16')" id="tab-s16"><span class="ti">☀️</span>Sunny 16</button>
+    <button class="screen-tab" style="--tab-accent:#cc1e1e;" onclick="switchScreen('film')" id="tab-film"><span class="ti">🎬</span>Film</button>
+    <button class="screen-tab" style="--tab-accent:#5a8f3c;" onclick="switchScreen('meter')" id="tab-meter"><span class="ti">💡</span>Meter</button>
+  </div>
+</div>
+
+<!-- ═══════════════ LIGHT METER SCREEN ═══════════════ -->
+<div class="screen" id="screen-meter">
+  <div class="lm-wrap">
+
+    <!-- Viewfinder -->
+    <div class="lm-viewfinder">
+      <video class="lm-video" id="lmVideo" playsinline muted autoplay></video>
+      <canvas class="lm-canvas" id="lmCanvas"></canvas>
+
+      <!-- Idle overlay (shown when camera not running) -->
+      <div class="lm-idle" id="lmIdle">
+        <span class="lm-idle-icon">📷</span>
+        <span class="lm-idle-text">Tap the shutter button<br>to start metering</span>
+      </div>
+
+      <!-- Live overlays (shown when running) -->
+      <div class="lm-vf-overlay" id="lmOverlay" style="display:none;">
+        <div class="lm-spot"></div>
+        <div class="lm-ev-overlay">
+          <span class="lm-ev-label">EV</span>
+          <span class="lm-ev-val" id="lmEvDisp">—</span>
+          <span class="lm-ev-label" style="margin-top:2px;">LUM</span>
+          <span class="lm-ev-label" id="lmLumDisp" style="font-size:11px;color:rgba(245,184,0,0.7);">—</span>
+        </div>
+        <div class="lm-scale-wrap">
+          <div class="lm-scale-track">
+            <div class="lm-scale-needle" id="lmNeedle"></div>
+          </div>
+          <div class="lm-scale-labels">
+            <span>−3</span><span>−2</span><span>−1</span>
+            <span>0</span>
+            <span>+1</span><span>+2</span><span>+3</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Shutter button -->
+    <div class="lm-shutter-wrap">
+      <button class="lm-shutter-btn" id="lmStartBtn" onclick="lmToggle()">
+        <span class="lm-shutter-icon" id="lmBtnIcon">●</span>
+        <span id="lmBtnLabel">METER</span>
+      </button>
+    </div>
+
+    <!-- Controls -->
+    <div class="lm-controls">
+
+      <!-- Result readout — directly under camera -->
+      <div class="lm-result" id="lmResult">
+        <div class="lm-result-header">
+          <span class="lm-result-title">Recommended Exposure</span>
+          <div class="lm-traffic-dot idle" id="lmDot"></div>
+        </div>
+        <div class="lm-result-body" id="lmResultInner">
+          <div class="lm-traffic-msg idle">Tap meter to take a reading</div>
+        </div>
+      </div>
+
+      <!-- Scene anchor — MUST be set before metering -->
+      <div class="lm-ctrl-section">
+        <span class="lm-ctrl-label">1 · Scene Type <span style="font-size:9px;color:var(--muted);font-family:var(--mono);">(sets base EV — required)</span></span>
+        <div class="lm-chip-row" id="lmAnchorChips"></div>
+      </div>
+
+      <!-- Mode -->
+      <div class="lm-ctrl-section">
+        <span class="lm-ctrl-label">2 · Priority Mode</span>
+        <div class="lm-mode-toggle">
+          <button class="lm-mode-btn active" id="lmModeAv" onclick="lmSetMode('Av')">Av · Aperture</button>
+          <button class="lm-mode-btn"        id="lmModeTv" onclick="lmSetMode('Tv')">Tv · Shutter</button>
+        </div>
+      </div>
+
+      <!-- ISO -->
+      <div class="lm-ctrl-section">
+        <span class="lm-ctrl-label">3 · ISO</span>
+        <div class="lm-chip-row" id="lmISOChips"></div>
+      </div>
+
+      <!-- Aperture (shown in Av mode) -->
+      <div class="lm-ctrl-section" id="lmAvRow">
+        <span class="lm-ctrl-label">4 · Select Aperture</span>
+        <div class="lm-chip-row" id="lmAvChips"></div>
+      </div>
+
+      <!-- Shutter (shown in Tv mode) -->
+      <div class="lm-ctrl-section hidden" id="lmTvRow">
+        <span class="lm-ctrl-label">4 · Select Shutter Speed</span>
+        <div class="lm-chip-row" id="lmTvChips"></div>
+      </div>
+
+      <!-- Calibration -->
+      <div class="lm-ctrl-section">
+        <span class="lm-ctrl-label">EV Calibration (offset)</span>
+        <div class="lm-cal-row">
+          <button class="lm-cal-btn" onclick="lmCal(-0.5)">−½</button>
+          <div style="flex:1;text-align:center;">
+            <span class="lm-cal-val" id="lmCalDisp">0.0 EV</span>
+            <span class="lm-cal-label">Offset</span>
+          </div>
+          <button class="lm-cal-btn" onclick="lmCal(+0.5)">+½</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<!-- SUNNY 16 SCREEN -->
+<div class="screen active" id="screen-s16">
+  <div class="s16-box">
+    <span class="s16-ey">📐 The Sunny 16 Rule</span>
+    <p>On a sunny day, set aperture to <strong>f/16</strong> and shutter to <strong>1/ISO</strong>. Open aperture for darker conditions — each stop doubles the shutter speed. Shutter is capped at <strong>1/1000</strong>; aperture adjusts automatically.</p>
+  </div>
+  <div class="step-blk">
+    <span class="step-lbl pending" id="isoLabel">01 · Select your film ISO</span>
+    <div class="iso-grid" id="isoGrid"></div>
+  </div>
+  <div class="step-blk hidden" id="condBlock">
+    <span class="step-lbl pending" id="condLabel">02 · Select lighting condition</span>
+    <div class="cond-list" id="condList"></div>
+  </div>
+  <div id="resultWrap" class="hidden" style="padding:0 16px 40px;"></div>
+</div>
+
+<!-- ═══════════════ FILM TRACKER SCREEN ═══════════════ -->
+<div class="screen" id="screen-film">
+  <div class="film-screen">
+
+    <!-- Sub-nav -->
+    <div class="film-nav">
+      <button class="film-nav-btn active" onclick="switchFilmTab('load')"   id="ftab-load">📦 Load</button>
+      <button class="film-nav-btn"        onclick="switchFilmTab('shoot')"  id="ftab-shoot">📸 Shooting</button>
+      <button class="film-nav-btn"        onclick="switchFilmTab('done')"   id="ftab-done">✅ Finished</button>
+    </div>
+
+    <!-- ── LOAD TAB ── -->
+    <div class="film-sub active" id="fsub-load">
+      <span class="fsec-title">🎞️ Load a New Roll</span>
+
+      <!-- Step 1: Camera -->
+      <div class="f-field">
+        <span class="f-label">1 · Select Camera</span>
+        <select class="f-select" id="loadCamSelect" onchange="onLoadCamChange()">
+          <option value="">— choose camera —</option>
+        </select>
+      </div>
+
+      <!-- Add new camera inline -->
+      <div id="addCamPanel" class="hidden">
+        <div class="f-row">
+          <div class="f-field"><span class="f-label">Make</span><input class="f-input" id="newCamMake" placeholder="e.g. Nikon"></div>
+          <div class="f-field"><span class="f-label">Model</span><input class="f-input" id="newCamModel" placeholder="e.g. FM2"></div>
+        </div>
+        <button class="f-btn f-btn-primary" onclick="saveNewCamera()">Add Camera</button>
+        <button class="f-btn f-btn-outline mt10" onclick="hideAddCam()">Cancel</button>
+      </div>
+
+      <button class="f-btn f-btn-outline mt10" id="addCamBtn" onclick="showAddCam()">+ Add New Camera</button>
+
+      <div class="divider"></div>
+
+      <!-- Step 2: Film -->
+      <div class="f-field">
+        <span class="f-label">2 · Select Film Roll</span>
+        <select class="f-select" id="loadFilmSelect" onchange="onLoadFilmChange()">
+          <option value="">— choose film —</option>
+        </select>
+      </div>
+
+      <!-- Add new film inline -->
+      <div id="addFilmPanel" class="hidden">
+        <div class="f-field"><span class="f-label">Film Name</span><input class="f-input" id="newFilmName" placeholder="e.g. Kodak Portra 400"></div>
+        <div class="f-field"><span class="f-label">Exposures</span>
+          <select class="f-select" id="newFilmExp">
+            <option value="12">12 exp</option>
+            <option value="24">24 exp</option>
+            <option value="36" selected>36 exp</option>
+          </select>
+        </div>
+        <button class="f-btn f-btn-primary" onclick="saveNewFilm()">Add Film</button>
+        <button class="f-btn f-btn-outline mt10" onclick="hideAddFilm()">Cancel</button>
+      </div>
+
+      <button class="f-btn f-btn-outline mt10" id="addFilmBtn" onclick="showAddFilm()">+ Add New Film Stock</button>
+
+      <div class="divider"></div>
+
+      <!-- Step 3: Load date -->
+      <div class="f-field">
+        <span class="f-label">3 · Load Date</span>
+        <input class="f-input" type="date" id="loadDate">
+      </div>
+
+      <button class="f-btn f-btn-primary" onclick="loadRoll()">📷 Load Roll & Start Shooting</button>
+
+      <!-- Loaded cameras summary -->
+      <div id="loadedList" class="mt14"></div>
+    </div>
+
+    <!-- ── SHOOTING TAB ── -->
+    <div class="film-sub" id="fsub-shoot">
+      <span class="fsec-title">📸 Cameras in Shooting</span>
+      <div id="shootingList"></div>
+    </div>
+
+    <!-- ── FINISHED TAB ── -->
+    <div class="film-sub" id="fsub-done">
+      <span class="fsec-title">✅ Finished Rolls</span>
+      <div id="finishedList"></div>
+    </div>
+
+  </div>
+</div>
+
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// CAMERA SETTINGS DATA
+// ══════════════════════════════════════════════════════════════
+
+const BASE = [
+  {id:'sunny',       label:'Sunny Outdoors',    emoji:'☀️',  color:'#F59E0B', iso:'100',       ap:'f/8 – f/11',    sh:'1/250 – 1/1000', notes:'Ideal for landscapes and bright conditions.', tip:'Use a polarizer filter to cut glare and boost contrast.'},
+  {id:'cloudy',      label:'Cloudy Outdoors',   emoji:'⛅',  color:'#94A3B8', iso:'200 – 400', ap:'f/4 – f/8',     sh:'1/125 – 1/500',  notes:'Slight boost in ISO for softness.',            tip:'Overcast skies act as a giant softbox — great for portraits.'},
+  {id:'golden',      label:'Golden Hour',        emoji:'🌅',  color:'#EA580C', iso:'200 – 800', ap:'f/2.8 – f/5.6', sh:'1/200 – 1/500',  notes:'Warm tones, great for portraits.',             tip:'Shoot within 20 mins of sunrise or sunset for the best light.'},
+  {id:'indoors-day', label:'Indoors (Daylight)', emoji:'🏛️', color:'#0EA5E9', iso:'400 – 800', ap:'f/1.8 – f/4',   sh:'1/60 – 1/200',   notes:'Use natural window light.',                    tip:'Position subject at 45° to the window for flattering side light.'},
+  {id:'indoors-low', label:'Indoors (Lowlight)', emoji:'🕯️', color:'#D97706', iso:'800 – 3200',ap:'f/1.8 – f/2.8', sh:'1/60 – 1/100',   notes:'Use a tripod or steady hands.',                tip:'Enable image stabilisation and brace elbows against your body.'},
+  {id:'night',       label:'Night Outdoors',     emoji:'🌃',  color:'#6366F1', iso:'1600+',     ap:'f/1.8 – f/4',   sh:'1/30 – 1/100',   notes:'Use city lights; avoid motion blur.',          tip:'Keep shutter above 1/focal-length to avoid hand-shake blur.'},
+  {id:'portraits',   label:'Portraits',          emoji:'🧑‍🎨',color:'#EC4899', iso:'100 – 800', ap:'f/1.8 – f/4',   sh:'1/125 – 1/500',  notes:'Focus on eyes, blurred background.',           tip:'Use single-point AF on the nearest eye.'},
+  {id:'action',      label:'Action Shots',       emoji:'🏄',  color:'#10B981', iso:'100 – 400', ap:'f/2.8 – f/5.6', sh:'1/1000+',        notes:'Use burst mode to capture motion.',            tip:'Switch to continuous AF (AF-C) to track moving subjects.'},
+  {id:'macro',       label:'Macro Shots',        emoji:'🌿',  color:'#16A34A', iso:'100 – 400', ap:'f/8 – f/16',    sh:'1/200 – 1/500',  notes:'Manual focus preferred.',                     tip:'Depth of field is razor thin — use a focusing rail.'},
+];
+
+const CAMS = {
+  xh2s: {
+    label:'X-H2S', accent:'#f5b800',
+    tips:{
+      sunny:        "Set Film Simulation to Velvia for vivid saturated landscapes. Use the electronic shutter up to 1/32000s — no overexposure even wide open. Save your Velvia settings as a Custom Preset on the mode dial for one-tap recall.",
+      cloudy:       "Try Classic Chrome — its muted tones suit overcast light. Set WB to Cloudy (≈6000K) for subtle warmth. Boost Shadow Tone slightly in the Q Menu to open up dark areas.",
+      golden:       "Eterna Cinema adds cinematic warmth and gentle highlight rolloff. Enable Face/Eye AF so the X-H2S locks on while you chase the light. Raise Highlight Tone +1 to preserve warm sky detail.",
+      'indoors-day':"Enable IBIS — up to 7 stops of compensation. Set Auto WB to White Priority to keep mixed light neutral. The tilt/touchscreen is great for low-angle framing.",
+      'indoors-low':"Don't fear ISO 3200–6400 — the stacked sensor handles noise very well. Try Acros for dramatic B&W with natural grain. Stack IBIS + OIS (IS Mode: IBIS/OIS) for maximum stability.",
+      night:        "Set Subject Detection to 'Person' so Face/Eye AF works in tricky city light. Silent electronic shutter is perfect for street. Try Acros+R for punchy B&W cityscapes.",
+      portraits:    "Turn on FACE/EYE DETECTION — class-leading AI eye-tracking. Use AF-C for active subjects. Classic Negative or Astia/Soft gives the most flattering skin tones. Assign Face Select to an Fn button.",
+      action:       "The X-H2S shoots up to 40fps with near-zero blackout. Enable AF-C + Subject Detection (Bird, Animal, Car) via Q Menu. Use Pre-Shot ES to capture moments before you press the shutter.",
+      macro:        "Enable Focus Peaking (White or Red) in MF Assist. Assign Focus Check magnifier to an Fn button for instant 100% zoom. Use the rear joystick to nudge focus without moving the camera.",
+    },
+    lenses:{
+      sunny:        [{n:'XF 10-24mm f/4 R OIS WR',w:'Ultra-wide for dramatic landscapes & big skies'},{n:'XF 16-55mm f/2.8 R LM WR',w:'Weather-sealed workhorse — sharp corner to corner'},{n:'XF 18mm f/2 R',w:'Compact prime, great for travel & street'}],
+      cloudy:       [{n:'XF 56mm f/1.2 R WR',w:'Beautiful subject separation even in flat light'},{n:'XF 16-80mm f/4 R OIS WR',w:'Versatile all-day zoom with built-in OIS'},{n:'XF 23mm f/1.4 R LM WR',w:'Fast wide prime for environmental portraits'}],
+      golden:       [{n:'XF 56mm f/1.2 R WR',w:'Gorgeous warm bokeh wide open at golden hour'},{n:'XF 50mm f/1.0 R WR',w:'The fastest XF lens — incredible subject isolation'},{n:'XF 90mm f/2 R LM WR',w:'Compression and creamy backgrounds for portraits'}],
+      'indoors-day':[{n:'XF 35mm f/1.4 R',w:'Classic rendering with beautiful character indoors'},{n:'XF 23mm f/1.4 R LM WR',w:'Wide enough for rooms, fast enough for low light'},{n:'XF 16-55mm f/2.8 R LM WR',w:'Constant f/2.8 for flexible indoor shooting'}],
+      'indoors-low':[{n:'XF 56mm f/1.2 R WR',w:'Maximum light gathering for low-light portraits'},{n:'XF 50mm f/1.0 R WR',w:'f/1.0 — the ultimate Fuji low-light prime'},{n:'XF 35mm f/1.4 R',w:'Legendary low-light performer'}],
+      night:        [{n:'XF 23mm f/1.4 R LM WR',w:'Fast & wide — captures city scenes with context'},{n:'XF 35mm f/1.4 R',w:'Classic street focal length, beautiful wide open'},{n:'XF 56mm f/1.2 R WR',w:'Isolate subjects against bokeh city lights'}],
+      portraits:    [{n:'XF 56mm f/1.2 R WR',w:'The go-to portrait lens — 85mm equiv, stunning bokeh'},{n:'XF 90mm f/2 R LM WR',w:'135mm equiv — flattering compression for headshots'},{n:'XF 50mm f/1.0 R WR',w:'Extraordinary subject isolation at f/1.0'}],
+      action:       [{n:'XF 50-140mm f/2.8 R LM OIS WR',w:'Top tracking — near-100% keeper rate at 30fps'},{n:'XF 100-400mm f/4.5-5.6 R LM OIS WR',w:'Wildlife & sports reach with excellent OIS'},{n:'XF 150-600mm f/5.6-8 R LM OIS WR',w:'Maximum reach for birds-in-flight & motorsport'}],
+      macro:        [{n:'XF 80mm f/2.8 R LM OIS WR Macro',w:'The only true 1:1 macro in the XF lineup'},{n:'XF 60mm f/2.4 R Macro',w:'1:2 macro, lightweight and very sharp'},{n:'XF 30mm f/2.8 R LM WR Macro',w:'Compact 1:1 macro, ideal for travel'}],
+    },
+  },
+
+  xpro3: {
+    label:'X-Pro3', accent:'#e07020',
+    tips:{
+      sunny:        "Use the sub-monitor to confirm your film simulation — Velvia pops on bright days. Use the Hybrid OVF for a true rangefinder experience with optical framing and AF overlay. The titanium body handles outdoor shooting with confidence.",
+      cloudy:       "Classic Negative was introduced with the X-Pro3 and is perfectly suited to overcast, muted light. The hidden LCD philosophy encourages you to trust your meter — resist chimping. OVF gives you an immersive, distraction-free experience.",
+      golden:       "The OVF gives a real-world view of scene, helping you read light changes in real time. Set Eterna or Classic Chrome for cinematic golden-hour tones. Sub-monitor keeps your film simulation visible at a glance without breaking your flow.",
+      'indoors-day':"The X-Pro3 has no IBIS — lean on fast lenses and brace against walls. Use the hidden LCD tilted down for waist-level shooting. Set Custom Preset C1 for your indoor configuration for instant recall.",
+      'indoors-low':"The X-Pro3 focuses down to -6EV — near pitch darkness. Use the EVF (3.69m-dot OLED) to stay discreet. Shoot Acros+R for dramatic B&W and embrace not reviewing every shot — trust your instincts, like a film photographer.",
+      night:        "The X-Pro3 is a natural street camera — compact, quiet, unobtrusive. Zone focus at f/5.6 using hyperfocal distance for ninja-fast shooting. Classic Chrome or Acros work beautifully for nocturnal cityscapes.",
+      portraits:    "The rangefinder heritage makes it exceptional for environmental and candid portraits. Keep the rear LCD hidden to maintain a less intrusive presence — subjects forget you're shooting. Face/Eye AF is solid.",
+      action:       "The X-Pro3 shoots 11fps (mechanical) or 20fps (electronic shutter). Use Zone AF or Wide/Tracking mode. The OVF is ideal for panning — you can see outside the frame lines to anticipate the action.",
+      macro:        "Switch to EVF for precise macro framing — OVF parallax makes close focus tricky. Use Focus Peaking in MF mode and the AF Range Limiter to speed up focus hunting. The X-Pro3 introduced per-lens AF range limiting.",
+    },
+    lenses:{
+      sunny:        [{n:'XF 14mm f/2.8 R',w:'Superb ultra-wide prime, pairs beautifully with OVF'},{n:'XF 23mm f/2 R WR',w:'Classic 35mm equivalent — compact and rangefinder-natural'},{n:'XF 18mm f/2 R',w:'Lightweight wide prime, great street companion'}],
+      cloudy:       [{n:'XF 35mm f/1.4 R',w:'Classic Negative + f/1.4 = moody perfection in flat light'},{n:'XF 23mm f/1.4 R LM WR',w:'Fast and sharp, rangefinder-appropriate focal length'},{n:'XF 56mm f/1.2 R WR',w:'Portrait separation even in featureless overcast'}],
+      golden:       [{n:'XF 35mm f/1.4 R',w:'Legendary rendering — warm tones and beautiful bokeh'},{n:'XF 56mm f/1.2 R WR',w:'Gorgeous separation at golden hour'},{n:'XF 23mm f/2 R WR',w:'Compact and weather-sealed for chasing the light outdoors'}],
+      'indoors-day':[{n:'XF 23mm f/1.4 R LM WR',w:'Fast and wide, suited to OVF natural framing'},{n:'XF 35mm f/1.4 R',w:'Classic rendering, ideal for intimate indoor photography'},{n:'XF 16mm f/1.4 R WR',w:'Very wide, very fast — floods sensor with indoor light'}],
+      'indoors-low':[{n:'XF 35mm f/1.4 R',w:'Legendary low-light character, beautiful rendering wide open'},{n:'XF 56mm f/1.2 R WR',w:'Pulls in light brilliantly at f/1.2'},{n:'XF 23mm f/2 R WR',w:'Compact and weather-sealed — always in the bag'}],
+      night:        [{n:'XF 23mm f/2 R WR',w:'The quintessential X-Pro3 street lens — fast, discreet, WR'},{n:'XF 35mm f/1.4 R',w:'Beautiful wide-open rendering in low city light'},{n:'XF 16mm f/1.4 R WR',w:'Ultra-wide and fast for dramatic night cityscapes'}],
+      portraits:    [{n:'XF 56mm f/1.2 R WR',w:'85mm equiv — the rangefinder portrait classic'},{n:'XF 90mm f/2 R LM WR',w:'Flattering reach, clean background separation'},{n:'XF 35mm f/1.4 R',w:'Intimate portraits with beautiful environmental context'}],
+      action:       [{n:'XF 50-140mm f/2.8 R LM OIS WR',w:'Best AF tracking available for the X-Pro3'},{n:'XF 100-400mm f/4.5-5.6 R LM OIS WR',w:'Sports & wildlife reach — use OVF for panning'},{n:'XF 16-55mm f/2.8 R LM WR',w:'Fast zoom for unpredictable action situations'}],
+      macro:        [{n:'XF 80mm f/2.8 R LM OIS WR Macro',w:'1:1 macro — switch to EVF for precise framing'},{n:'XF 60mm f/2.4 R Macro',w:'Classic compact macro, use EVF + focus peaking'},{n:'XF 30mm f/2.8 R LM WR Macro',w:'Lightweight travel macro option'}],
+    },
+  },
+};
+
+// ══════════════════════════════════════════════════════════════
+// SUNNY 16 DATA
+// ══════════════════════════════════════════════════════════════
+
+const ISO_OPTIONS  = [25,50,100,200,400,800,1600,3200];
+const MAX_SHUTTER  = 1000;
+const STD_SHUTTERS = [1,2,4,8,15,30,60,125,250,500,1000];
+const AP_SCALE     = ['f/16','f/11','f/8','f/5.6','f/4','f/2.8','f/2','f/1.4'];
+
+const CONDITIONS = [
+  {id:'sunny',  label:'Sunny',          emoji:'☀️', color:'#F59E0B', stops:0, desc:'Bright sun, hard shadows',        film:'Kodak Gold 200 or Portra 400.'},
+  {id:'sl_ov',  label:'Slight Overcast',emoji:'🌤️', color:'#FBBF24', stops:1, desc:'Soft shadows, bright diffuse sky', film:'Portra 160/400 or Fuji Pro 400H.'},
+  {id:'ov',     label:'Overcast',       emoji:'⛅', color:'#94A3B8', stops:2, desc:'Cloudy bright, no visible shadows', film:'Ilford HP5+ (push to 800) or Kodak Ultramax.'},
+  {id:'hvy_ov', label:'Heavy Overcast', emoji:'☁️', color:'#64748B', stops:3, desc:'Heavy clouds, flat light',          film:'Push 1 stop. HP5+ at 800 or Tri-X at 1600.'},
+  {id:'shade',  label:'Open Shade',     emoji:'🌳', color:'#10B981', stops:4, desc:'In shade on a sunny day',           film:'Kodak Tri-X 400 or Cinestill 800T.'},
+  {id:'golden', label:'Golden Hour',    emoji:'🌅', color:'#EA580C', stops:4, desc:'Low sun, warm directional light',   film:'Kodak Portra 400 or Cinestill 800T.'},
+];
+
+// ══════════════════════════════════════════════════════════════
+// STATE — CAMERA TIPS
+// ══════════════════════════════════════════════════════════════
+
+const activeScenario = {xh2s:null, xpro3:null};
+const activeTab      = {xh2s:'settings', xpro3:'settings'};
+let selISO = null, selCond = null;
+
+// ══════════════════════════════════════════════════════════════
+// FILM TRACKER STATE (localStorage)
+// ══════════════════════════════════════════════════════════════
+
+function loadState() {
+  try {
+    return JSON.parse(localStorage.getItem('bomberFilm') || '{}');
+  } catch(e) { return {}; }
+}
+
+function saveState(s) {
+  try { localStorage.setItem('bomberFilm', JSON.stringify(s)); } catch(e) {}
+}
+
+function getFilmState() {
+  const s = loadState();
+  if (!s.cameras)  s.cameras  = [];
+  if (!s.films)    s.films    = [];
+  if (!s.rolls)    s.rolls    = [];
+  return s;
+}
+
+// ══════════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════════
+
+function h(color, alpha) {
+  return color + Math.round(alpha * 255).toString(16).padStart(2,'0');
+}
+
+function nearStd(v) { return STD_SHUTTERS.reduce((a,b)=>Math.abs(b-v)<Math.abs(a-v)?b:a); }
+
+function calcExp(iso, stops) {
+  const raw = iso * Math.pow(2, stops);
+  if (raw <= MAX_SHUTTER) return {ap:AP_SCALE[stops]||'f/16', sh:nearStd(raw), capped:false, extra:0};
+  let cl=0, adj=raw;
+  while (adj > MAX_SHUTTER && cl < stops) { adj/=2; cl++; }
+  return {ap:AP_SCALE[Math.max(0,stops-cl)]||'f/16', sh:nearStd(Math.min(adj,MAX_SHUTTER)), capped:true, extra:cl};
+}
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+function fmtDate(d) {
+  if (!d) return '—';
+  try { return new Date(d + 'T12:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
+  catch(e) { return d; }
+}
+
+// ══════════════════════════════════════════════════════════════
+// SCREEN SWITCHING
+// ══════════════════════════════════════════════════════════════
+
+function _switchScreenCore(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.screen-tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+
+  const sub = document.getElementById('titleSub');
+  if (id==='s16')        { sub.textContent='Sunny 16 · 35mm'; sub.style.color='#cc1e1e'; }
+  else if (id==='film')  { sub.textContent='Film Tracker'; sub.style.color='#cc1e1e'; }
+  else if (id==='meter') { sub.textContent='Light Meter'; sub.style.color='#5a8f3c'; }
+
+  if (id==='film') refreshFilmUI();
+}
+
+// ══════════════════════════════════════════════════════════════
+// DIGITAL SCREENS
+// ══════════════════════════════════════════════════════════════
+
+function buildGrid(camKey) {
+  document.getElementById('grid-'+camKey).innerHTML = BASE.map(s=>`
+    <div class="scenario-card" id="card-${camKey}-${s.id}" onclick="selectScenario('${camKey}','${s.id}')">
+      <span class="se">${s.emoji}</span>
+      <span class="sl">${s.label}</span>
+    </div>
+  `).join('');
+}
+
+function selectScenario(camKey, sid) {
+  const panel = document.getElementById('panel-'+camKey);
+  if (activeScenario[camKey]===sid) {
+    activeScenario[camKey]=null; panel.classList.add('hidden'); panel.innerHTML='';
+    resetCard(camKey,sid); return;
+  }
+  if (activeScenario[camKey]) resetCard(camKey,activeScenario[camKey]);
+  activeScenario[camKey]=sid; activeTab[camKey]='settings';
+  const s=BASE.find(x=>x.id===sid);
+  const card=document.getElementById('card-'+camKey+'-'+sid);
+  card.style.background=h(s.color,0.2); card.style.borderColor=h(s.color,0.7);
+  card.querySelector('.sl').style.color=s.color; card.style.transform='scale(1.04)';
+  renderPanel(camKey,sid);
+  setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'nearest'}),50);
+}
+
+function resetCard(camKey,sid) {
+  const card=document.getElementById('card-'+camKey+'-'+sid);
+  if(!card) return;
+  card.style.background=''; card.style.borderColor='';
+  card.querySelector('.sl').style.color=''; card.style.transform='';
+}
+
+function renderPanel(camKey,sid) {
+  const s=BASE.find(x=>x.id===sid), cam=CAMS[camKey];
+  const panel=document.getElementById('panel-'+camKey);
+  panel.className='detail-panel'; panel.classList.remove('hidden');
+  panel.style.background = `var(--bg)`;
+  panel.style.border = `1.5px solid ${h(s.color,0.55)}`;
+  panel.innerHTML=`
+    <div class="dp-header" style="border-bottom-color:${h(s.color,0.2)};">
+      <div class="dp-left">
+        <span class="dp-emoji">${s.emoji}</span>
+        <div>
+          <span class="dp-eyebrow" style="color:${s.color};">${cam.label} · Scenario</span>
+          <h2 class="dp-title">${s.label}</h2>
+        </div>
+      </div>
+      <button class="close-btn" onclick="selectScenario('${camKey}','${sid}')">✕</button>
+    </div>
+    <div class="inner-tabs" id="itabs-${camKey}">
+      ${[['settings','⚙️ Settings'],['cam','📷 '+cam.label],['lenses','🔭 Lenses']].map(([tid,tlbl])=>`
+        <button class="inner-tab ${activeTab[camKey]===tid?'active':''}"
+          style="${activeTab[camKey]===tid?`color:${s.color};border-bottom-color:${s.color};`:''}"
+          onclick="switchInner('${camKey}','${sid}','${tid}')">
+          ${tlbl}
+        </button>
+      `).join('')}
+    </div>
+    <div class="inner-content" id="icontent-${camKey}">${innerContent(camKey,sid)}</div>
+  `;
+}
+
+function innerContent(camKey,sid) {
+  const s=BASE.find(x=>x.id===sid), cam=CAMS[camKey], tab=activeTab[camKey];
+  if(tab==='settings') return `
+    <div class="badges">
+      ${[['ISO',s.iso],['APERTURE',s.ap],['SHUTTER',s.sh]].map(([l,v])=>`
+        <div class="badge"><span class="bl">${l}</span><span class="bv">${v}</span></div>
+      `).join('')}
+    </div>
+    <div class="ib" style="background:${h(s.color,0.14)};border:1.5px solid ${h(s.color,0.4)};"><span class="ibl" style="color:${s.color};">📝 Notes</span><p>${s.notes}</p></div>
+    <div class="ib" style="background:var(--surface2);border:1.5px solid var(--border-strong);"><span class="ibl" style="color:var(--muted);">💡 General Tip</span><p style="color:var(--text2);">${s.tip}</p></div>
+  `;
+  if(tab==='cam') return `<div class="ib" style="background:${h(s.color,0.12)};border:1.5px solid ${h(s.color,0.38)};"><span class="ibl" style="color:${s.color};">🎌 ${cam.label} Tips</span><p style="color:var(--text2);">${cam.tips[sid]||'—'}</p></div>`;
+  if(tab==='lenses') {
+    const ls=cam.lenses[sid]||[];
+    return `<div class="lens-list" style="border:1px solid ${h(s.color,0.25)};">${ls.map(l=>`<div class="lens-row"><span class="ln" style="color:${s.color};">${l.n}</span><span class="lw">${l.w}</span></div>`).join('')}</div>`;
+  }
+  return '';
+}
+
+function switchInner(camKey,sid,tid) {
+  activeTab[camKey]=tid;
+  const s=BASE.find(x=>x.id===sid);
+  document.getElementById('itabs-'+camKey).querySelectorAll('.inner-tab').forEach((b,i)=>{
+    const isAct=['settings','cam','lenses'][i]===tid;
+    b.classList.toggle('active',isAct);
+    b.style.color=isAct?s.color:''; b.style.borderBottomColor=isAct?s.color:'';
+  });
+  document.getElementById('icontent-'+camKey).innerHTML=innerContent(camKey,sid);
+}
+
+// ══════════════════════════════════════════════════════════════
+// SUNNY 16
+// ══════════════════════════════════════════════════════════════
+
+function buildISO() {
+  document.getElementById('isoGrid').innerHTML=ISO_OPTIONS.map(iso=>`
+    <button class="iso-btn ${selISO===iso?'active':''}" onclick="pickISO(${iso})">ISO ${iso}</button>
+  `).join('');
+}
+
+function pickISO(iso) {
+  selISO=iso; selCond=null;
+  const lbl=document.getElementById('isoLabel');
+  lbl.classList.remove('pending'); lbl.textContent='✓ Film ISO — ISO '+iso;
+  buildISO(); buildConditions();
+  document.getElementById('resultWrap').classList.add('hidden');
+  document.getElementById('resultWrap').innerHTML='';
+}
+
+function buildConditions() {
+  document.getElementById('condBlock').classList.remove('hidden');
+  const lbl=document.getElementById('condLabel');
+  lbl.classList.add('pending'); lbl.textContent='02 · Select lighting condition';
+  document.getElementById('condList').innerHTML=CONDITIONS.map(c=>{
+    const exp=calcExp(selISO,c.stops), isAct=selCond===c.id;
+    return `<button class="cond-btn" onclick="pickCond('${c.id}')" style="${isAct?`background:${h(c.color,0.18)};border-color:${h(c.color,0.65)};`:''}">
+      <span class="cem">${c.emoji}</span>
+      <div class="cinfo"><span class="cn" style="${isAct?`color:${c.color};`:''}">${c.label}</span><span class="cd">${c.desc}</span></div>
+      <div class="cset"><span class="cap" style="${isAct?`color:${c.color};`:''}">${exp.ap}</span><span class="csh">1/${exp.sh}</span></div>
+    </button>`;
+  }).join('');
+}
+
+function pickCond(id) {
+  selCond=id;
+  const lbl=document.getElementById('condLabel');
+  lbl.classList.remove('pending'); lbl.textContent='✓ Condition selected';
+  buildConditions(); renderResult();
+}
+
+function renderResult() {
+  const c=CONDITIONS.find(x=>x.id===selCond);
+  if(!c||!selISO) return;
+  const exp=calcExp(selISO,c.stops), wrap=document.getElementById('resultWrap');
+  wrap.classList.remove('hidden');
+  wrap.innerHTML=`<div class="result-panel" style="background:var(--bg);">
+    <div class="rh" style="background:${h(c.color,0.14)};border-bottom-color:${h(c.color,0.4)};"><span style="font-size:21px;">${c.emoji}</span><div><span class="rey" style="color:${c.color};">03 · Your Exposure</span><h2 class="rt" style="color:${c.color};">${c.label}</h2></div></div>
+    <div class="rb">
+      <div class="badges">${[['ISO','ISO '+selISO],['APERTURE',exp.ap],['SHUTTER','1/'+exp.sh]].map(([l,v])=>`<div class="badge"><span class="bl">${l}</span><span class="bv">${v}</span></div>`).join('')}</div>
+      ${exp.capped?`<div class="capped-n"><span class="capped-t">⚡ Shutter capped at 1/1000</span><p class="capped-b">Aperture closed ${exp.extra} stop${exp.extra>1?'s':''} to ${exp.ap} to keep shutter at 1/1000.</p></div>`:''}
+      ${exp.sh<60?`<div class="warn-n">⚠️ Shutter is slow — use a tripod or brace firmly.</div>`:''}
+      <div class="ib" style="background:${h(c.color,0.12)};border:1.5px solid ${h(c.color,0.38)};"><span class="ibl" style="color:${c.color};">🎞️ Film Recommendation</span><p style="color:var(--text2);">${c.film}</p></div>
+      <div class="ib" style="background:var(--surface2);border:1.5px solid var(--border-strong);"><span class="ibl" style="color:var(--muted);">📷 35mm Shooting Tips</span><p style="color:var(--text2);">Bracket ±1 stop to protect slide film. For negative film, expose slightly to the right — it handles overexposure better than underexposure.</p></div>
+      <button class="reset-btn" onclick="resetS16()">↩ Start Over</button>
+    </div>
+  </div>`;
+  setTimeout(()=>wrap.scrollIntoView({behavior:'smooth',block:'nearest'}),50);
+}
+
+function resetS16() {
+  selISO=null; selCond=null;
+  const lbl=document.getElementById('isoLabel');
+  lbl.classList.add('pending'); lbl.textContent='01 · Select your film ISO';
+  document.getElementById('condBlock').classList.add('hidden');
+  document.getElementById('resultWrap').classList.add('hidden');
+  document.getElementById('resultWrap').innerHTML='';
+  buildISO();
+}
+
+// ══════════════════════════════════════════════════════════════
+// FILM TRACKER
+// ══════════════════════════════════════════════════════════════
+
+let currentFilmTab = 'load';
+
+function switchFilmTab(tab) {
+  currentFilmTab = tab;
+  document.querySelectorAll('.film-nav-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.film-sub').forEach(s=>s.classList.remove('active'));
+  document.getElementById('ftab-'+tab).classList.add('active');
+  document.getElementById('fsub-'+tab).classList.add('active');
+  refreshFilmUI();
+}
+
+function refreshFilmUI() {
+  refreshLoadTab();
+  refreshShootingTab();
+  refreshFinishedTab();
+}
+
+// ── LOAD TAB ──
+
+function refreshLoadTab() {
+  const st = getFilmState();
+
+  // Camera select
+  const cs = document.getElementById('loadCamSelect');
+  const curCam = cs.value;
+  cs.innerHTML = '<option value="">— choose camera —</option>' +
+    st.cameras.map(c=>`<option value="${c.id}" ${curCam===c.id?'selected':''}>${c.make} ${c.model}</option>`).join('');
+
+  // Film select
+  const fs = document.getElementById('loadFilmSelect');
+  const curFilm = fs.value;
+  fs.innerHTML = '<option value="">— choose film —</option>' +
+    st.films.map(f=>`<option value="${f.id}" ${curFilm===f.id?'selected':''}>${f.name} (${f.exp} exp)</option>`).join('');
+
+  // Today's date default
+  const dateFld = document.getElementById('loadDate');
+  if (!dateFld.value) dateFld.value = new Date().toISOString().slice(0,10);
+
+  // Currently loaded rolls (not yet finished)
+  const active = st.rolls.filter(r=>r.status==='shooting');
+  const loadedDiv = document.getElementById('loadedList');
+  if (active.length === 0) {
+    loadedDiv.innerHTML = '';
+    return;
+  }
+  loadedDiv.innerHTML = `<span class="fsec-title" style="margin-top:18px;">📷 Currently Loaded</span>` +
+    active.map(r => {
+      const cam = st.cameras.find(c=>c.id===r.cameraId)||{make:'?',model:''};
+      return `<div class="item-card">
+        <span class="ic-icon">🎞️</span>
+        <div class="ic-info">
+          <span class="ic-name">${r.filmName}</span>
+          <span class="ic-sub">${cam.make} ${cam.model} · Loaded ${fmtDate(r.loadDate)}</span>
+        </div>
+        <span class="ic-badge badge-shooting">Shooting</span>
+      </div>`;
+    }).join('');
+}
+
+function onLoadCamChange() { /* just keeps selection */ }
+function onLoadFilmChange() { /* just keeps selection */ }
+
+function showAddCam()  { document.getElementById('addCamPanel').classList.remove('hidden'); document.getElementById('addCamBtn').classList.add('hidden'); }
+function hideAddCam()  { document.getElementById('addCamPanel').classList.add('hidden');    document.getElementById('addCamBtn').classList.remove('hidden'); }
+function showAddFilm() { document.getElementById('addFilmPanel').classList.remove('hidden'); document.getElementById('addFilmBtn').classList.add('hidden'); }
+function hideAddFilm() { document.getElementById('addFilmPanel').classList.add('hidden');    document.getElementById('addFilmBtn').classList.remove('hidden'); }
+
+function saveNewCamera() {
+  const make  = document.getElementById('newCamMake').value.trim();
+  const model = document.getElementById('newCamModel').value.trim();
+  if (!make || !model) { alert('Please enter both make and model.'); return; }
+  const st = getFilmState();
+  const cam = {id:uid(), make, model};
+  st.cameras.push(cam);
+  saveState(st);
+  document.getElementById('newCamMake').value = '';
+  document.getElementById('newCamModel').value = '';
+  hideAddCam();
+  refreshLoadTab();
+  // Select the new camera
+  document.getElementById('loadCamSelect').value = cam.id;
+}
+
+function saveNewFilm() {
+  const name = document.getElementById('newFilmName').value.trim();
+  const exp  = parseInt(document.getElementById('newFilmExp').value);
+  if (!name) { alert('Please enter a film name.'); return; }
+  const st = getFilmState();
+  const film = {id:uid(), name, exp};
+  st.films.push(film);
+  saveState(st);
+  document.getElementById('newFilmName').value = '';
+  hideAddFilm();
+  refreshLoadTab();
+  document.getElementById('loadFilmSelect').value = film.id;
+}
+
+function loadRoll() {
+  const cameraId = document.getElementById('loadCamSelect').value;
+  const filmId   = document.getElementById('loadFilmSelect').value;
+  const loadDate = document.getElementById('loadDate').value;
+  if (!cameraId || !filmId || !loadDate) { alert('Please select a camera, film, and load date.'); return; }
+
+  const st   = getFilmState();
+  const film = st.films.find(f=>f.id===filmId);
+
+  // Check camera doesn't already have a roll loaded
+  const existing = st.rolls.find(r=>r.cameraId===cameraId && r.status==='shooting');
+  if (existing) { alert('This camera already has a roll loaded! Finish it first.'); return; }
+
+  const roll = {
+    id:        uid(),
+    cameraId,
+    filmId,
+    filmName:  film.name,
+    filmExp:   film.exp,
+    loadDate,
+    endDate:   null,
+    status:    'shooting',
+    exposed:   0,
+  };
+  st.rolls.push(roll);
+  saveState(st);
+
+  // Reset selects
+  document.getElementById('loadCamSelect').value  = '';
+  document.getElementById('loadFilmSelect').value = '';
+
+  refreshFilmUI();
+  switchFilmTab('shoot');
+}
+
+// ── SHOOTING TAB ──
+
+let expandedRollId = null;
+
+function refreshShootingTab() {
+  const st = getFilmState();
+  const shooting = st.rolls.filter(r=>r.status==='shooting');
+  const div = document.getElementById('shootingList');
+
+  if (shooting.length === 0) {
+    div.innerHTML = `<div class="empty-state"><span class="empty-icon">📭</span><p class="empty-text">No rolls loaded yet.<br>Go to Load to load a roll.</p></div>`;
+    return;
+  }
+
+  div.innerHTML = shooting.map(r => {
+    const cam  = st.cameras.find(c=>c.id===r.cameraId)||{make:'?',model:''};
+    const pct  = Math.min(100, Math.round((r.exposed/r.filmExp)*100));
+    const isExp= expandedRollId === r.id;
+
+    return `<div class="item-card ${isExp?'selected':''}" onclick="toggleRollDetail('${r.id}')">
+        <span class="ic-icon">📷</span>
+        <div class="ic-info">
+          <span class="ic-name">${cam.make} ${cam.model}</span>
+          <span class="ic-sub">${r.filmName} · ${r.exposed}/${r.filmExp} exp</span>
+          <div class="prog-bar"><div class="prog-fill" style="width:${pct}%;"></div></div>
+        </div>
+        <span class="ic-badge badge-shooting">Shooting</span>
+      </div>
+      ${isExp ? rollDetailHTML(r, cam) : ''}`;
+  }).join('');
+}
+
+const ISO_PRESETS = [25, 50, 100, 200, 400, 800, 1600, 3200];
+
+function rollDetailHTML(r, cam) {
+  const pct = Math.min(100, Math.round((r.exposed/r.filmExp)*100));
+  const st  = getFilmState();
+  // Merge saved custom ISOs with presets
+  const customISOs = st.customISOs || [];
+  const allISOs = [...new Set([...ISO_PRESETS, ...customISOs])].sort((a,b)=>a-b);
+
+  const isoChips = allISOs.map(iso => {
+    const active = r.iso === iso;
+    return `<button class="iso-chip ${active?'active':''}"
+      onclick="setRollISO('${r.id}',${iso}); event.stopPropagation();"
+      style="${active?'background:var(--film-accent);border-color:var(--film-accent);color:var(--kodak-dark);':''}">
+      ${iso}
+    </button>`;
+  }).join('');
+
+  return `<div class="roll-detail" id="detail-${r.id}">
+    <div class="rd-row"><span class="rd-key">Camera</span><span class="rd-val">${cam.make} ${cam.model}</span></div>
+    <div class="rd-row"><span class="rd-key">Film</span><span class="rd-val">${r.filmName}</span></div>
+    <div class="rd-row"><span class="rd-key">Exposures</span><span class="rd-val">${r.filmExp}</span></div>
+    <div class="rd-row"><span class="rd-key">Loaded</span><span class="rd-val">${fmtDate(r.loadDate)}</span></div>
+    <div class="rd-row"><span class="rd-key">ISO</span><span class="rd-val" style="color:var(--film-accent);">${r.iso ? 'ISO ' + r.iso : '— not set'}</span></div>
+    <div class="rd-row"><span class="rd-key">Progress</span><span class="rd-val">${pct}%</span></div>
+
+    <div style="margin:13px 0 4px;">
+      <span class="f-label" style="margin-bottom:8px;">Film ISO</span>
+      <div class="iso-chip-grid">${isoChips}</div>
+      <div class="add-iso-row" id="addISORow-${r.id}" style="display:flex;gap:8px;margin-top:8px;">
+        <input class="f-input" id="customISO-${r.id}" type="number" placeholder="Custom ISO" min="1" max="25600"
+          style="flex:1;" onclick="event.stopPropagation();" onkeydown="if(event.key==='Enter'){addCustomISO('${r.id}');event.stopPropagation();}">
+        <button class="f-btn f-btn-outline" style="width:auto;padding:0 14px;white-space:nowrap;"
+          onclick="addCustomISO('${r.id}'); event.stopPropagation();">+ Add</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div style="margin:4px 0 6px;">
+      <span class="f-label">Frames exposed</span>
+      <div class="exp-counter">
+        <button class="exp-btn" onclick="adjustExp('${r.id}',-1); event.stopPropagation()">−</button>
+        <span class="exp-num">${r.exposed}</span>
+        <button class="exp-btn" onclick="adjustExp('${r.id}',1); event.stopPropagation()">+</button>
+      </div>
+      <p class="exp-total">${r.filmExp - r.exposed} frames remaining</p>
+    </div>
+    <button class="f-btn f-btn-danger" onclick="endRoll('${r.id}'); event.stopPropagation()">🏁 End Roll</button>
+  </div>`;
+}
+
+function setRollISO(rollId, iso) {
+  const st = getFilmState();
+  const roll = st.rolls.find(r=>r.id===rollId);
+  if (!roll) return;
+  // Toggle off if already selected
+  roll.iso = (roll.iso === iso) ? null : iso;
+  saveState(st);
+  refreshShootingTab();
+}
+
+function addCustomISO(rollId) {
+  const input = document.getElementById('customISO-' + rollId);
+  if (!input) return;
+  const val = parseInt(input.value);
+  if (!val || val < 1 || val > 25600) { alert('Please enter a valid ISO between 1 and 25600.'); return; }
+  const st = getFilmState();
+  if (!st.customISOs) st.customISOs = [];
+  if (!st.customISOs.includes(val)) {
+    st.customISOs.push(val);
+    st.customISOs.sort((a,b)=>a-b);
+  }
+  // Also set it on the roll
+  const roll = st.rolls.find(r=>r.id===rollId);
+  if (roll) roll.iso = val;
+  saveState(st);
+  refreshShootingTab();
+}
+
+function toggleRollDetail(rollId) {
+  expandedRollId = expandedRollId === rollId ? null : rollId;
+  refreshShootingTab();
+}
+
+function adjustExp(rollId, delta) {
+  const st = getFilmState();
+  const roll = st.rolls.find(r=>r.id===rollId);
+  if (!roll) return;
+  roll.exposed = Math.max(0, Math.min(roll.filmExp, roll.exposed + delta));
+  saveState(st);
+  refreshShootingTab();
+}
+
+function endRoll(rollId) {
+  const st = getFilmState();
+  const roll = st.rolls.find(r=>r.id===rollId);
+  if (!roll) return;
+  roll.status  = 'done';
+  roll.endDate = new Date().toISOString().slice(0,10);
+  saveState(st);
+  expandedRollId = null;
+  refreshFilmUI();
+  switchFilmTab('done');
+}
+
+// ── FINISHED TAB ──
+
+function refreshFinishedTab() {
+  const st = getFilmState();
+  const done = st.rolls.filter(r=>r.status==='done').reverse();
+  const div  = document.getElementById('finishedList');
+
+  if (done.length === 0) {
+    div.innerHTML = `<div class="empty-state"><span class="empty-icon">🎞️</span><p class="empty-text">No finished rolls yet.<br>Shoot something and end a roll!</p></div>`;
+    return;
+  }
+
+  div.innerHTML = done.map(r => {
+    const cam = st.cameras.find(c=>c.id===r.cameraId)||{make:'?',model:''};
+    return `<div class="item-card">
+      <span class="ic-icon">✅</span>
+      <div class="ic-info">
+        <span class="ic-name">${r.filmName}</span>
+        <span class="ic-sub">${cam.make} ${cam.model} · ${fmtDate(r.loadDate)} → ${fmtDate(r.endDate)}</span>
+        <span class="ic-sub">${r.exposed} of ${r.filmExp} frames · ${r.iso ? 'ISO ' + r.iso : 'ISO not recorded'}</span>
+      </div>
+      <span class="ic-badge badge-done">Done</span>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// LIGHT METER
+// ══════════════════════════════════════════════════════════════
+
+// ── State ──
+let lmStream     = null;
+let lmRunning    = false;
+let lmRafId      = null;
+let lmMode       = 'Av';
+let lmISO        = 400;
+let lmAv         = 5.6;
+let lmTv         = 125;
+let lmLastEV     = null;
+let lmCalOffset  = 0;
+let lmAnchorEV   = 12;  // scene-type anchor EV (overcast default)
+
+// ── Tables ──
+const LM_ISO = [25, 50, 100, 200, 400, 800, 1600, 3200, 6400];
+
+const LM_AV = [
+  {l:'f/1',   v:1},   {l:'f/1.4', v:1.4}, {l:'f/2',   v:2},
+  {l:'f/2.8', v:2.8}, {l:'f/4',   v:4},   {l:'f/5.6', v:5.6},
+  {l:'f/8',   v:8},   {l:'f/11',  v:11},  {l:'f/16',  v:16},
+  {l:'f/22',  v:22},
+];
+
+const LM_TV = [
+  {l:'1"',     v:1},   {l:'1/2',   v:2},   {l:'1/4',   v:4},
+  {l:'1/8',    v:8},   {l:'1/15',  v:15},  {l:'1/30',  v:30},
+  {l:'1/60',   v:60},  {l:'1/125', v:125}, {l:'1/250', v:250},
+  {l:'1/500',  v:500}, {l:'1/1000',v:1000},{l:'1/2000',v:2000},
+];
+
+// Scene anchors: EV100 values for common lighting conditions.
+// iPhone auto-exposes the video stream (pixels always cluster near mid-grey),
+// so absolute luminance is meaningless. Instead the user picks their scene type
+// to set the anchor EV, and the pixel deviation provides ±2 stop fine-tuning.
+const LM_ANCHORS = [
+  {l:'\u2600\ufe0f Bright Sun',     ev:15},
+  {l:'\ud83c\udf24\ufe0f Hazy Sun',       ev:14},
+  {l:'\u26c5 Overcast',       ev:12},
+  {l:'\u2601\ufe0f Heavy Overcast', ev:11},
+  {l:'\ud83c\udf33 Open Shade',     ev:10},
+  {l:'\ud83c\udfd9\ufe0f Indoors/Window', ev:9},
+  {l:'\ud83d\udd6f\ufe0f Indoors/Lamp',   ev:7},
+  {l:'\ud83c\udf03 Night Street',   ev:5},
+  {l:'\ud83c\udf19 Night Low',      ev:3},
+];
+
+// ── Maths ──
+// Scene EV = anchor + log2(lum/128) * 1.5 + calOffset
+// log2(lum/128): deviation from mid-grey in stops
+// * 1.5: compensates for iPhone AGC dynamic range compression
+// anchor: user-selected scene type EV (ISO-independent)
+function lmLumToEV(lum) {
+  const deviation = Math.log2(Math.max(lum / 128, 0.001)) * 1.5;
+  return lmAnchorEV + deviation + lmCalOffset;
+}
+
+function lmSolveTv(ev, av) {
+  // EV = log2(av^2 / t) + log2(ISO/100)  =>  t = av^2 / 2^(ev - log2(ISO/100))
+  const evAdj = ev - Math.log2(lmISO / 100);
+  return (av * av) / Math.pow(2, evAdj);
+}
+
+function lmSolveAv(ev, tvSec) {
+  const evAdj = ev - Math.log2(lmISO / 100);
+  return Math.sqrt(Math.max(tvSec * Math.pow(2, evAdj), 0.01));
+}
+
+function nearestAv(av) { return LM_AV.reduce((a,b) => Math.abs(b.v-av)<Math.abs(a.v-av)?b:a); }
+function nearestTv(d)  { return LM_TV.reduce((a,b) => Math.abs(b.v-d)<Math.abs(a.v-d)?b:a); }
+function fmtTv(d) { return d < 2 ? d+'"' : '1/'+Math.round(d); }
+function fmtAv(v) { return 'f/'+(v%1===0?v:v.toFixed(1)); }
+
+// ── Sampling loop ──
+function lmSampleFrame() {
+  const video  = document.getElementById('lmVideo');
+  const canvas = document.getElementById('lmCanvas');
+  if (!video || !canvas || video.readyState < 2) {
+    if (lmRunning) lmRafId = requestAnimationFrame(lmSampleFrame);
+    return;
+  }
+  const W=64, H=48;
+  canvas.width=W; canvas.height=H;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, W, H);
+  // Spot-meter: sample centre 30% only
+  const sx=Math.floor(W*0.35), sy=Math.floor(H*0.35);
+  const sw=Math.floor(W*0.3),  sh=Math.floor(H*0.3);
+  const data = ctx.getImageData(sx, sy, sw, sh).data;
+  let sum=0, n=0;
+  for (let i=0; i<data.length; i+=4) {
+    sum += 0.2126*data[i] + 0.7152*data[i+1] + 0.0722*data[i+2];
+    n++;
+  }
+  const avgLum = sum / n;
+  const ev = lmLumToEV(avgLum);
+  lmLastEV = ev;
+  lmUpdateDisplay(ev, avgLum);
+  if (lmRunning) lmRafId = requestAnimationFrame(lmSampleFrame);
+}
+
+// ── Display ──
+function lmUpdateDisplay(ev, rawLum) {
+  const evDisp = document.getElementById('lmEvDisp');
+  if (evDisp) evDisp.textContent = ev.toFixed(1);
+  // Needle centred at anchor EV
+  const clamped = Math.max(-3, Math.min(3, ev - lmAnchorEV));
+  const pct = ((clamped + 3) / 6) * 100;
+  const needle = document.getElementById('lmNeedle');
+  if (needle) needle.style.left = pct + '%';
+  const lumDisp = document.getElementById('lmLumDisp');
+  if (lumDisp) lumDisp.textContent = Math.round(rawLum);
+  lmRenderResult(ev);
+}
+
+function lmRenderResult(ev) {
+  const inner = document.getElementById('lmResultInner');
+  const dot   = document.getElementById('lmDot');
+  if (!inner) return;
+  let solvedLabel, solvedVal, fixedLabel, fixedVal, trafficCls, trafficMsg;
+  if (lmMode === 'Av') {
+    const tSec    = lmSolveTv(ev, lmAv);
+    const tDenom  = 1 / tSec;
+    const nearest = nearestTv(tDenom);
+    const diff    = Math.abs(Math.log2(Math.max(tDenom,0.001)) - Math.log2(nearest.v));
+    solvedLabel='SHUTTER'; solvedVal=fmtTv(nearest.v);
+    fixedLabel='APERTURE'; fixedVal=fmtAv(lmAv);
+    if (diff<0.6) { trafficCls='ok'; trafficMsg='Good exposure'; }
+    else if (tDenom>nearest.v) { trafficCls='over'; trafficMsg='\u2191 Overexposed \u2014 close aperture or add ND'; }
+    else { trafficCls='under'; trafficMsg='\u2193 Underexposed \u2014 open aperture or raise ISO'; }
+  } else {
+    const tSec    = 1 / lmTv;
+    const avRaw   = lmSolveAv(ev, tSec);
+    const nearest = nearestAv(avRaw);
+    const diff    = Math.abs(Math.log2(avRaw) - Math.log2(nearest.v));
+    solvedLabel='APERTURE'; solvedVal=nearest.l;
+    fixedLabel='SHUTTER'; fixedVal=fmtTv(lmTv);
+    if (diff<0.6) { trafficCls='ok'; trafficMsg='Good exposure'; }
+    else if (avRaw>nearest.v) { trafficCls='over'; trafficMsg='\u2191 Overexposed \u2014 reduce ISO or add ND'; }
+    else { trafficCls='under'; trafficMsg='\u2193 Underexposed \u2014 increase ISO or slow shutter'; }
+  }
+  if (dot) dot.className = 'lm-traffic-dot ' + trafficCls;
+  inner.innerHTML = `
+    <div class="lm-reading-grid">
+      <div class="lm-reading-card">
+        <span class="lm-rc-label">ISO</span>
+        <span class="lm-rc-val">${lmISO}</span>
+      </div>
+      <div class="lm-reading-card">
+        <span class="lm-rc-label">Scene EV</span>
+        <span class="lm-rc-val">${ev.toFixed(1)}</span>
+      </div>
+      <div class="lm-reading-card">
+        <span class="lm-rc-label">${fixedLabel}</span>
+        <span class="lm-rc-val" style="font-size:18px;">${fixedVal}</span>
+        <span class="lm-rc-fixed">Selected</span>
+      </div>
+      <div class="lm-reading-card highlight">
+        <span class="lm-rc-label">${solvedLabel}</span>
+        <span class="lm-rc-val" style="font-size:18px;">${solvedVal}</span>
+        <span class="lm-rc-fixed">Recommended</span>
+      </div>
+    </div>
+    <div class="lm-traffic-msg ${trafficCls}">${trafficMsg}</div>
+  `;
+}
+
+// ── Camera control ──
+async function lmStartCamera() {
+  try {
+    lmStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width:{ideal:1280}, height:{ideal:720} }
+    });
+    const video = document.getElementById('lmVideo');
+    video.srcObject = lmStream;
+    await video.play();
+    lmRunning = true;
+    lmRafId = requestAnimationFrame(lmSampleFrame);
+    document.getElementById('lmIdle').style.display    = 'none';
+    document.getElementById('lmOverlay').style.display = 'block';
+    const btn = document.getElementById('lmStartBtn');
+    btn.classList.add('active');
+    document.getElementById('lmBtnLabel').textContent = 'STOP';
+    document.getElementById('lmBtnIcon').textContent  = '\u25a0';
+  } catch(e) {
+    alert('Camera access denied. Please allow camera access and try again.');
+  }
+}
+
+function lmStopCamera() {
+  lmRunning = false;
+  if (lmRafId) { cancelAnimationFrame(lmRafId); lmRafId=null; }
+  if (lmStream) { lmStream.getTracks().forEach(t=>t.stop()); lmStream=null; }
+  document.getElementById('lmIdle').style.display    = 'flex';
+  document.getElementById('lmOverlay').style.display = 'none';
+  document.getElementById('lmEvDisp').textContent    = '\u2014';
+  const btn = document.getElementById('lmStartBtn');
+  if (btn) {
+    btn.classList.remove('active');
+    document.getElementById('lmBtnLabel').textContent = 'METER';
+    document.getElementById('lmBtnIcon').textContent  = '\u25cf';
+  }
+  const inner = document.getElementById('lmResultInner');
+  const dot   = document.getElementById('lmDot');
+  if (inner) inner.innerHTML = '<div class="lm-traffic-msg idle">Tap meter to take a reading</div>';
+  if (dot)   dot.className   = 'lm-traffic-dot idle';
+}
+
+function lmToggle() {
+  if (lmRunning) lmStopCamera(); else lmStartCamera();
+}
+
+// ── UI builders ──
+function lmInit() {
+  lmBuildISO(); lmBuildAv(); lmBuildTv(); lmBuildAnchors();
+  lmUpdateCalDisplay();
+}
+
+function lmBuildISO() {
+  document.getElementById('lmISOChips').innerHTML = LM_ISO.map(iso =>
+    '<button class="lm-chip ' + (iso===lmISO?'active':'') + '" onclick="lmPickISO(' + iso + ')">' + iso + '</button>'
+  ).join('');
+}
+
+function lmBuildAv() {
+  document.getElementById('lmAvChips').innerHTML = LM_AV.map(a =>
+    '<button class="lm-chip ' + (a.v===lmAv?'active':'') + '" onclick="lmPickAv(' + a.v + ')">' + a.l + '</button>'
+  ).join('');
+}
+
+function lmBuildTv() {
+  document.getElementById('lmTvChips').innerHTML = LM_TV.map(t =>
+    '<button class="lm-chip ' + (t.v===lmTv?'active':'') + '" onclick="lmPickTv(' + t.v + ')">' + t.l + '</button>'
+  ).join('');
+}
+
+function lmBuildAnchors() {
+  document.getElementById('lmAnchorChips').innerHTML = LM_ANCHORS.map(a =>
+    '<button class="lm-chip ' + (a.ev===lmAnchorEV?'active':'') + '" onclick="lmPickAnchor(' + a.ev + ')" style="font-size:10px;">' + a.l + '</button>'
+  ).join('');
+}
+
+function lmPickISO(iso)   { lmISO=iso;       lmBuildISO();     if(lmLastEV!==null) lmRenderResult(lmLastEV); }
+function lmPickAv(av)     { lmAv=av;         lmBuildAv();      if(lmLastEV!==null) lmRenderResult(lmLastEV); }
+function lmPickTv(tv)     { lmTv=tv;         lmBuildTv();      if(lmLastEV!==null) lmRenderResult(lmLastEV); }
+function lmPickAnchor(ev) { lmAnchorEV=ev;   lmBuildAnchors(); if(lmLastEV!==null) lmRenderResult(lmLastEV); }
+
+function lmSetMode(mode) {
+  lmMode = mode;
+  document.getElementById('lmModeAv').classList.toggle('active', mode==='Av');
+  document.getElementById('lmModeTv').classList.toggle('active', mode==='Tv');
+  document.getElementById('lmAvRow').classList.toggle('hidden',  mode!=='Av');
+  document.getElementById('lmTvRow').classList.toggle('hidden',  mode!=='Tv');
+  if (lmLastEV!==null) lmRenderResult(lmLastEV);
+}
+
+function lmCal(delta) {
+  lmCalOffset = Math.max(-3, Math.min(3, lmCalOffset + delta));
+  lmUpdateCalDisplay();
+  if (lmLastEV!==null) lmRenderResult(lmLastEV);
+}
+
+function lmUpdateCalDisplay() {
+  const el = document.getElementById('lmCalDisp');
+  if (el) el.textContent = (lmCalOffset >= 0 ? '+' : '') + lmCalOffset.toFixed(1) + ' EV';
+}
+
+// ── switchScreen — single definition, handles meter stop-on-leave ──
+function switchScreen(id) {
+  if (id !== 'meter' && lmRunning) lmStopCamera();
+  _switchScreenCore(id);
+}
+
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+
+// camera screens removed
+buildISO();
+refreshFilmUI();
+lmInit();
+
+
+</script>
+</body>
+</html>
